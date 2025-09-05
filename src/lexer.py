@@ -1,33 +1,103 @@
-#Dictionary for tokenizer
-ADD = 'ADD'
-SUB = 'SUB'
-MUL = 'MUL'
-DIV = 'DIV'
-MOD = 'MOD'
-POW = 'POW'
-SET = 'SET'
-NOT_EQ = 'NOT_EQ'
-L_THAN_EQ = 'L_THAN_EQ'
-G_THAN_EQ = 'G_THAN_EQ'
-EQ = 'EQ'
-LPAR = 'LPAR'
-RPAR = 'RPAR'
-L_BRACK = 'L_BRACK'
-R_BRACK = 'R_BRACK'
-SEMI = 'SEMI'
-COMMA = 'COMMA'
-G_THAN = 'G_THAN'
-L_THAN = 'L_THAN'
-DOT = 'DOT'
-HASH = 'HASH'
-LBRACE = 'LBRACE'
-RBRACE = 'RBRACE'
-EOF = 'EOF'
-VAR = 'VAR'
-NUM = 'NUM'
-NOT = 'NOT'
-KEYWORD = 'KEYWORD'
+#Dictionary for 
+# TODO: implement ' and "
+# TODO: implement new punctuators/keywords/exc..    
 
+# PUNCTUATORS
+LBRACK      = "["
+RBRACK      = "]"
+LPAREN      = "("
+RPAREN      = ")"
+LBRACE      = "{"
+RBRACE      = "}"
+COMMA       = ","
+COLON       = ":"
+SEMICOLON   = ";"
+ASTERISK    = "*"
+PREPROC     = "#"
+DOT         = "."
+TILDE       = "~"
+
+# KEYWORDS
+AUTO        = "auto"
+BREAK       = "break"
+CASE        = "case"
+CHAR        = "char"
+CONST       = "const"
+CONTINUE    = "continue"
+DEFAULT     = "default"
+DO          = "do"
+DOUBLE      = "double"
+ELSE        = "else"
+ENUM        = "enum"
+EXTERN      = "extern"
+FLOAT       = "float"
+FOR         = "for"
+GOTO        = "goto"
+IF          = "if"
+INT         = "int"
+LONG        = "long"
+REGISTER    = "register"
+RETURN      = "return"
+SHORT       = "short"
+SIGNED      = "signed"
+SIZEOF      = "sizeof"
+STATIC      = "static"
+STRUCT      = "struct"
+SWITCH      = "switch"
+TYPEDEF     = "typedef"
+UNION       = "union"
+UNSIGNED    = "unsigned"
+VOID        = "void"
+VOLATILE    = "volatile"
+WHILE       = "while"
+
+# ARITHMETIC OPERATORS
+PLUS        = "+"
+MINUS       = "-"
+MULTIPLY    = "*"
+DIVIDE      = "/"
+MODULUS     = "%"
+UNARYPLUS   = "+"
+UNARYMINUS  = "-"
+INCREMENT   = "++"
+DECREMENT   = "--"
+
+# RELATIONAL OPERATORS
+LESSTHAN        = "<"
+GREATERTHAN     = ">"
+LESSTHANEQUAL   = "<="
+GREATERTHANEQUAL= ">="
+EQUAL           = "=="
+NOTEQUAL        = "!="
+
+# LOGICAL OPERATORS
+LOGAND      = "&&"
+LOGOR       = "||"
+LOGNOT      = "!"
+
+# BITWISE OPERATORS
+BITAND      = "&"
+BITOR       = "|"
+BITXOR      = "^"
+BITNOT      = "~"
+LEFTSHIFT   = "<<"
+RIGHTSHIFT  = ">>"
+
+# ASSIGNMENT OPERATORS
+ASSIGN      = "="
+PLUSASSIGN  = "+="
+MINUSASSIGN = "-="
+MULTASSIGN  = "*="
+DIVASSIGN   = "/="
+MODASSIGN   = "%="
+ANDASSIGN   = "&="
+ORASSIGN    = "|="
+XORASSIGN   = "^="
+LSHIFTASSIGN= "<<="
+RSHIFTASSIGN= ">>="
+
+# INDENTATION (if you plan to treat it as a token)
+INDENT      = "INDENT"
 token_table = {
     '+' : ADD,
     '-' : SUB,
@@ -41,8 +111,8 @@ token_table = {
     '>=': G_THAN_EQ,
     '==': EQ,
     '!' : NOT,
-    '(' : LPAR,
-    ')' : RPAR,
+    '(' : LPAREN,
+    ')' : RPAREN,
     '[' : L_BRACK,
     ']' : R_BRACK,
     ';' : SEMI,
@@ -52,7 +122,7 @@ token_table = {
     '.' : DOT,
     '#' : HASH,
     '{' : LBRACE,
-    '}' : RBRACE 
+    '}' : RBRACE
 }
 
 keyword_table = {
@@ -65,7 +135,7 @@ keyword_table = {
     'char'    : KEYWORD,
     'const'   : KEYWORD,
     'continue': KEYWORD,
-    'break'   : KEYWORD, 
+    'break'   : KEYWORD,
     'true'    : KEYWORD,
     'false'   : KEYWORD,
     'struct'  : KEYWORD,
@@ -80,12 +150,13 @@ keyword_table = {
 
 
 class Token:
-    def __init__(self, type: str, value:str):
-        self.type = type
+    def __init__(self, token_type: str, value:str, loc:int, char_num: int):
+        self.type = token_type
         self.value = value
-        #self.line = line
+        self.line_num = loc + 1
+        self.char_num = char_num + 1
     def __repr__(self):
-        return f"({self.type},{self.value})"
+        return f"({self.type},'{self.value}', Line: {self.line_num} Char: {self.char_num})"
         
 
 
@@ -102,6 +173,7 @@ class Tokenizer:
         self.file = file
         self.index = 0
         self.line = ''
+        self.line_num = 0
     
     # Increments index of source by one
     def _advance(self) -> str|None:
@@ -116,19 +188,22 @@ class Tokenizer:
             return None
         return self.line[self.index + 1]
     
-    # Returns next token in line 
+    def _return_token(self, token_type, content):
+        return(Token(token_type, content, f'Line: {self.line_num}, Char: {self.index}'))
+    
+    # Returns next token in line
     def _next_token(self) -> Token:
         char = self.line[self.index]  # For readability
         
         if(char is None):
-            return Token(EOF, None)
+            return Token(EOF, None, self.line_num, self.index)
 
         # Clear Whitespace?
         while(not char.strip()):
-            if(self._peek()is not None):
+            if(self._peek() is not None):
                 char = self._advance()
             else:
-                return Token(EOF,None)               
+                return Token(EOF, None, self.line_num, self.index)
         
         # Is letter?
         if(char.isalpha()):
@@ -144,8 +219,8 @@ class Tokenizer:
                     break
             self._advance()
             if(keyword := keyword_table.get(var)):
-                return Token(keyword, var)
-            return Token(VAR, var)
+                return Token(keyword, var, self.line_num, self.index)
+            return Token(VAR, var, self.line_num, self.index)
         
         # Is number?
         elif(char.isdigit()):
@@ -160,33 +235,34 @@ class Tokenizer:
                 else:
                     break
             self._advance()
-            return Token(NUM, num)
+            return Token(NUM, num, self.line_num, self.index)
         
         # Is Symbol?
         elif(token := token_table.get(char)):
-            symbol = Token(token, char)
+            symbol = Token(token, char, self.line_num, self.index)
             next_char = self._peek()
-            if(next_char is not None and token_table.get(char + next_char) is not None):
-                symbol = Token(token_table.get(char + next_char), char + next_char)
+            possible_token = token_table.get(char + next_char)
+            if(next_char is not None and possible_token is not None):
+                symbol = Token(possible_token, char + next_char, self.line_num, self.index)
                 self._advance()
             self._advance()
             return symbol
         
         else:
-            raise Exception(f'Unknown Token: {char}')
+            message = f"Unknown Token: {char}, Line: {self.line_num + 1}, Char: {self.index + 1}"
+            raise Exception(message)
     
     # Generates tokens in list of lists to track line numbers
     def tokenize(self) -> list[list[Token]]:
-        file_token_list = []
-        for raw_line in self.file:
+        token_list = []
+        for index, raw_line in enumerate(self.file):
             self.line = raw_line
             self.index = 0
-            token_list = []
+            self.line_num = index
             while(True):
                 token = self._next_token()
                 if(token.type is not EOF):
                     token_list.append(token)
                 else:
                     break
-            file_token_list.append(token_list)
-        return file_token_list
+        return token_list
