@@ -1,104 +1,6 @@
-KEYWORDS = {
-    "auto"     : 'AUTO',
-    "break"    : 'BREAK',
-    "case"     : 'CASE',
-    "char"     : 'CHAR',
-    "const"    : 'CONST',
-    "continue" : 'CONTINUE',
-    "default"  : 'DEFAULT',
-    "do"       : 'DO',
-    "double"   : 'DOUBLE',
-    "else"     : 'ELSE',
-    "enum"     : 'ENUM',
-    "extern"   : 'EXTERN',
-    "float"    : 'FLOAT',
-    "for"      : 'FOR',
-    "goto"     : 'GOTO',
-    "if"       : 'IF',
-    "int"      : 'INT',
-    "long"     : 'LONG',
-    "register" : 'REGISTER',
-    "return"   : 'RETURN',
-    "short"    : 'SHORT',
-    "signed"   : 'SIGNED',
-    "sizeof"   : 'SIZEOF',
-    "static"   : 'STATIC',
-    "struct"   : 'STRUCT',
-    "switch"   : 'SWITCH',
-    "typedef"  : 'TYPEDEF',
-    "union"    : 'UNION',
-    "unsigned" : 'UNSIGNED',
-    "void"     : 'VOID',
-    "volatile" : 'VOLATILE',
-    "while"    : 'WHILE'
-}
+from tokens import *
 
-OPERATORS = {
-#ARITHMETIC_OPERATORS
-    "+"  : 'PLUS',
-    "-"  : 'MINUS',
-    "*"  : 'MULTIPLY',
-    "/"  : 'DIVIDE',
-    "%"  : 'MODULUS',
-    "+"  : 'UNARYPLUS',
-    "-"  : 'UNARYMINUS',
-    "++" : 'INCREMENT',
-    "--" : 'DECREMENT',
-
-#RELATIONAL_OPERATORS
-    "<"  : 'LESSTHAN',
-    ">"  : 'GREATERTHAN',
-    "<=" : 'LESSTHANEQUAL',
-    ">=" : 'GREATERTHANEQUAL',
-    "==" : 'EQUAL',
-    "!=" : 'NOTEQUAL',
-
-#LOGICAL_OPERATORS
-    "&&" : 'LOGAND',
-    "||" : 'LOGOR',
-    "!"  : 'LOGNOT',
-
-#BITWISE_OPERATORS
-    "&"  : 'BITAND',
-    "|"  : 'BITOR',
-    "^"  : 'BITXOR',
-    "~"  : 'BITNOT',
-    "<<" : 'LEFTSHIFT',
-    ">>" : 'RIGHTSHIFT',
-
-#ASSIGNMENT_OPERATORS
-    "="   : 'ASSIGN',
-    "+="  : 'PLUSASSIGN',
-    "-="  : 'MINUSASSIGN',
-    "*="  : 'MULTASSIGN',
-    "/="  : 'DIVASSIGN',
-    "%="  : 'MODASSIGN',
-    "&="  : 'ANDASSIGN',
-    "|="  : 'ORASSIGN',
-    "^="  : 'XORASSIGN',
-    "<<=" : 'LSHIFTASSIGN',
-    ">>=" : 'RSHIFTASSIGN',
-
-#PUNCTUATORS
-    "[" : 'LBRACK',
-    "]" : 'RBRACK',
-    "(" : 'LPAREN',
-    ")" : 'RPAREN',
-    "{" : 'LBRACE',
-    "}" : 'RBRACE',
-    "," : 'COMMA',
-    ":" : 'COLON',
-    ";" : 'SEMICOLON',
-    "*" : 'ASTERISK',
-    "#" : 'PREPROC',
-    "." : 'DOT',
-    "~" : 'TILDE'
-}
-
-IDENTIFIER = 'IDENTIFIER'
-NUMBER   = 'NUMBER'
-EOF      = 'EOF'
-
+#TODO add multiline comment handling
 #TODO Revise Token desc
 class Token:
     """Representaition of C Language Tokens
@@ -111,11 +13,14 @@ class Token:
 
     def __repr__(self) -> str:
         if(self.line_num > -1):
-            return f"({self.type},'{self.value}', Line: {self.line_num + 1} Char: {self.char_num + 1})"
-        return  f"({self.type},'{self.value}'"
+            return f"({self.type},'{self.value}', Line: {self.line_num + 1} Char: {self.char_num})"
+        return  f"({self.type},'{self.value}')"
+
+    def __eq__(self, other) -> bool:
+        return self.value == other.value and self.type == other.type
         
 
-#TODO Implement string or file input, add option for not logging line numbers and char numbers
+#TODO add option for not logging line numbers and char numbers
 class Tokenizer:
     """Returns a List[Token] given List[str] or str
 
@@ -141,23 +46,25 @@ class Tokenizer:
             return None
         return self.line[self.index + 1]
     
-    def _clear_whitespace(self) -> str:
+    # If at EOF, return None
+    def _clear_whitespace(self) -> str | None:
+        if(self.index >= len(self.line)):
+            return None
         char = self.line[self.index]
         while(not char.strip()):
-            if(self._peek() is not None):
-                char = self._advance()
-            else:
-                break
+            if(not self._peek()):
+                return None
+            char = self._advance()
         return char
 
     def _is_identifier(self) -> Token|None:
         char = self.line[self.index]
-        if(not char.isalpha()):
+        if(not char.isalpha() and not char == '_'):
             return None
         ident = char
         while(True):
             next_char = self._peek()
-            if(next_char is None):
+            if(not next_char):
                 break
             elif(next_char.isalnum() or next_char == '_'):
                 char = self._advance()
@@ -188,28 +95,39 @@ class Tokenizer:
         
     def _is_symbol(self) -> Token|None:
         char  = self.line[self.index]
-        if(OPERATORS.get(char) is None):
+        if(SYMBOLS.get(char) is None):
             return None
         symbol = char
         while(True):
             next_char = self._peek()
             if(not next_char):
                 break
-            if(not OPERATORS.get(symbol + next_char)):
+            if(not SYMBOLS.get(symbol + next_char)):
                 break
             char = self._advance()
             symbol += char
         self._advance()
-        return Token(OPERATORS.get(symbol), symbol, self.line_num, self.index)
+        return Token(SYMBOLS.get(symbol), symbol, self.line_num, self.index)
+
+    def _is_comment(self) -> bool:
+        char = self.line[self.index]
+        next_char = self._peek()
+        if(not next_char):
+            return False
+        comment = COMMENTS.get(char + next_char)
+        if(comment is None):
+            return False
+        return True
 
     def _next_token(self) -> Token:
         char = self._clear_whitespace()
         token = None
-        if(char is None or char.strip() == ''):
+        if(not char):
+            return Token(EOF, None)
+        if (self._is_comment()):
             return Token(EOF, None)
         for check in (self._is_identifier, self._is_number, self._is_symbol):
             token = check()
-            char = self.line[self.index]
             if token:
                 return token
         unknown_token = f"Unknown Token: {char}, Line: {self.line_num + 1}, Char: {self.index + 1}"
@@ -224,8 +142,11 @@ class Tokenizer:
             self.line_num = line_num
             while(True):
                 token = self._next_token()
-                if(token.type is not EOF):
+                if(token.type != EOF):
                     token_list.append(token)
                 else:
                     break
         return token_list
+
+    def set_new_file(self, file: list[str]|str):
+        self.file = [file] if isinstance(file, str) else file
