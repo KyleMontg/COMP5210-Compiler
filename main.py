@@ -28,7 +28,6 @@ def create_arguments():
     # File location to be compiled
     parser.add_argument(
         "input",
-        required=True,
         type = Path,
         help = 'Path to input file'
     )

@@ -1,31 +1,51 @@
 # **COMP5210-Compiler**
-A compiler for a subsection of the C programming language by Kyle Montgomery.
+A compiler for a subsection of the C99 programming language by Kyle Montgomery.
+
 ***
-##
 
+## Requirments
+>* Python 3.12 or later
+>* For testing you need pytests
 
-
+***
 
 ## Usage
-
+##### Run code
+>`python main.py "input_file"`
+##### Run Tests
+>`pytest`
 
 ***
 
-
-
 ## Implementation Overview
+
+### Lexical Specification
+> * No Preprocessing
+> * Only Support Integers
+> * Allows for multi-char char-constants
+> * No Escape sequences
+> * Supports single line and multiline comments
+>    ##### Unsuported punctuators
+>|||||
+>|---|---|---|---|
+>| ... | ## | <: | :>   |
+>| <%  | %> | %: | %:%: |
 
 ### Testing
 > For testing I opted to use Pytest. To use this just enter `pytest` in a terminal in the main directory of project
 
 ### Tokens
-> The tokens I chose to implement were compiled for the lists shown at [Tokens in C](https://www.geeksforgeeks.org/c/tokens-in-c/)
+> The tokens I chose to implement were a subsection of the C99 ISO Standard found [here](https://www.dii.uchile.cl/~daespino/files/Iso_C_1999_definition.pdf)
 
 ***
 
+### To Do
+* Implement custom error handling
 # Tokens
 
-#### *Disclaimer: I accept more tokens than will be supported by the compiler at later stages of development*
+***
+
+#### *Disclaimer: I accept more tokens than will possible be supported by the compiler at later stages of development*
 
 ### Keywords
 | Keyword    | Token Name |
@@ -131,28 +151,21 @@ A compiler for a subsection of the C programming language by Kyle Montgomery.
 | `#`    | PREPROC    |
 | `.`    | DOT        |
 
-### Comments
-| Symbol | Token Name  |
-| ------ | ----------- |
-| `//`   | SLC         |
-| `/*`   | MLCSTART \* |
-| `*/`   | MLCEND \*   |
-
 ### Other Tokens
-| Token Name | Description              |
-| ---------- | ------------------------ |
-| IDENTIFIER | User-defined identifiers |
-| NUMBER     | Numeric literals         |
-| EOF        | End-of-file marker       |
-
-\* Not Implemented
+| Token Name     | Description              |
+| -------------- | ------------------------ |
+| IDENTIFIER     | User-defined identifiers |
+| NUMBER         | Numeric literals         |
+| EOF            | End-of-file marker       |
+| CHAR LITERAL   | Character literals       |
+| STRING LITERAL | String Literals          |
 
 
 
 
 # Sources
 * https://github.com/ShivamSarodia/ShivyC/ - used for help formatting README
-* https://www.geeksforgeeks.org/c/tokens-in-c/ - used for what tokens to implement
+* https://www.dii.uchile.cl/~daespino/files/Iso_C_1999_definition.pdf - used for what tokens to implement
 
 
 

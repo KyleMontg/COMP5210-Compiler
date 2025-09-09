@@ -1,0 +1,5 @@
+(IDENTIFIER,'x', Line: 5 Char: 1)
+(PLUS,'+', Line: 5 Char: 3)
+(IDENTIFIER,'y', Line: 5 Char: 5)
+(ASSIGN,'=', Line: 5 Char: 7)
+(IDENTIFIER,'Z', Line: 5 Char: 9)

@@ -1,7 +1,7 @@
 from tokens import *
 
-#TODO add multiline comment handling
 #TODO Revise Token desc
+
 class Token:
     """Representaition of C Language Tokens
     """
@@ -28,10 +28,11 @@ class Tokenizer:
         Exception: Unknown Token
     """
     def __init__(self, file: list[str] | str):
-        self.file = [file] if isinstance(file, str) else file
+        self.file = file.splitlines() if isinstance(file, str) else file
         self.index = 0
         self.line_num = 0
         self.line = ''
+        self.in_mlc = False
     
     # Increments index of file by one
     def _advance(self) -> str|None:
@@ -114,24 +115,74 @@ class Tokenizer:
         next_char = self._peek()
         if(not next_char):
             return False
-        comment = COMMENTS.get(char + next_char)
-        if(comment is None):
-            return False
-        return True
+        comment = char + next_char
+        if(comment == '//'):
+            return True
+        return False
+
+    def _build_literal(self, check_char: str) -> str:
+        char = self.line[self.index]
+        build_lit = char
+        while(True):
+            next_char = self._peek()
+            if(not next_char):
+                raise Exception('Incomplete Literal') #TODO Implement errors
+            if(next_char != check_char):
+                char = self._advance()
+                build_lit += char
+            else:
+                char = self._advance()
+                build_lit += char
+                break
+        self._advance()
+        return(build_lit[1:-1])
+
+    def _is_string_or_char(self) -> Token|None:
+        char = self.line[self.index]
+        if(not char):
+            return None
+        if(char == '"'):
+            string_lit = self._build_literal('"')
+            return Token(STRING_LITERAL, string_lit, self.line_num, self.index)
+        elif(char == "'"):
+            char_lit = self._build_literal("'")
+            return Token(CHAR_LITERAL, char_lit, self.line_num, self.index)
+        return None
+
+    def _is_mlc(self) -> Token|None:
+        char = self.line[self.index]
+        next_char = self._peek()
+        if(not char or not next_char):
+            return None
+        if(char + next_char != '/*'):
+            return None
+        mlc_end = self.line[self.index:].find('*/')
+        if(mlc_end != -1):
+            self.index = mlc_end + 2
+            return None
+        self.in_mlc = True
+        return Token(EOF, None)
+
 
     def _next_token(self) -> Token:
+        if(self.in_mlc):
+            mlc_end = self.line.find('*/')
+            if mlc_end == -1:
+                return Token(EOF, None)
+            self.in_mlc = False
+            self.index = mlc_end + 2
         char = self._clear_whitespace()
         token = None
         if(not char):
             return Token(EOF, None)
         if (self._is_comment()):
             return Token(EOF, None)
-        for check in (self._is_identifier, self._is_number, self._is_symbol):
+        for check in (self._is_identifier, self._is_number, self._is_mlc, self._is_symbol, self._is_string_or_char):
             token = check()
             if token:
                 return token
         unknown_token = f"Unknown Token: {char}, Line: {self.line_num + 1}, Char: {self.index + 1}"
-        raise Exception(unknown_token)
+        raise Exception(unknown_token) #TODO Implement Errors
     
     # Iterate through list[str] and returns list[Token]
     def tokenize(self) -> list[Token]:
@@ -149,4 +200,4 @@ class Tokenizer:
         return token_list
 
     def set_new_file(self, file: list[str]|str):
-        self.file = [file] if isinstance(file, str) else file
+        self.file = file.splitlines() if isinstance(file, str) else file

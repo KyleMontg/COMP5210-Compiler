@@ -1,37 +1,50 @@
 # This is a subset of keywords from the C language
+
+
+
+# keyword
+# identifier
+# constant
+# string-literal
+# punctuator
 KEYWORDS = {
-    "auto"     : 'AUTO',
-    "break"    : 'BREAK',
-    "case"     : 'CASE',
-    "char"     : 'CHAR',
-    "const"    : 'CONST',
-    "continue" : 'CONTINUE',
-    "default"  : 'DEFAULT',
-    "do"       : 'DO',
-    "double"   : 'DOUBLE',
-    "else"     : 'ELSE',
-    "enum"     : 'ENUM',
-    "extern"   : 'EXTERN',
-    "float"    : 'FLOAT',
-    "for"      : 'FOR',
-    "goto"     : 'GOTO',
-    "if"       : 'IF',
-    "int"      : 'INT',
-    "long"     : 'LONG',
-    "register" : 'REGISTER',
-    "return"   : 'RETURN',
-    "short"    : 'SHORT',
-    "signed"   : 'SIGNED',
-    "sizeof"   : 'SIZEOF',
-    "static"   : 'STATIC',
-    "struct"   : 'STRUCT',
-    "switch"   : 'SWITCH',
-    "typedef"  : 'TYPEDEF',
-    "union"    : 'UNION',
-    "unsigned" : 'UNSIGNED',
-    "void"     : 'VOID',
-    "volatile" : 'VOLATILE',
-    "while"    : 'WHILE'
+    "auto"      : 'AUTO',
+    "break"     : 'BREAK',
+    "case"      : 'CASE',
+    "char"      : 'CHAR',
+    "const"     : 'CONST',
+    "continue"  : 'CONTINUE',
+    "default"   : 'DEFAULT',
+    "do"        : 'DO',
+    "double"    : 'DOUBLE',
+    "else"      : 'ELSE',
+    "enum"      : 'ENUM',
+    "extern"    : 'EXTERN',
+    "float"     : 'FLOAT',
+    "for"       : 'FOR',
+    "goto"      : 'GOTO',
+    "if"        : 'IF',
+    "inline"    : 'INLINE',
+    "int"       : 'INT',
+    "long"      : 'LONG',
+    "register"  : 'REGISTER',
+    "restrict"  : 'RESTRICT',
+    "return"    : 'RETURN',
+    "short"     : 'SHORT',
+    "signed"    : 'SIGNED',
+    "sizeof"    : 'SIZEOF',
+    "static"    : 'STATIC',
+    "struct"    : 'STRUCT',
+    "switch"    : 'SWITCH',
+    "typedef"   : 'TYPEDEF',
+    "union"     : 'UNION',
+    "unsigned"  : 'UNSIGNED',
+    "void"      : 'VOID',
+    "volatile"  : 'VOLATILE',
+    "while"     : 'WHILE',
+    "_Bool"     : '_BOOL',
+    "_Complex"  : '_Complex',
+    "_Imaginary": '_IMAGINARY'
 }
 
 SYMBOLS = {
@@ -90,16 +103,11 @@ SYMBOLS = {
     ";" : 'SEMICOLON',
     "#" : 'PREPROC',
     "." : 'DOT',
-}
-#COMMENTS
-COMMENTS = {
-#    "/*" : 'MLCSTART',
-#    "*/" : 'MLCEND',
-    "//" : 'SLC'
+
 }
 
 IDENTIFIER = 'IDENTIFIER'
 NUMBER   = 'NUMBER'
 EOF      = 'EOF'
-CHAR_LITERAL = 'CHAR_LITERAL' #TODO IMPLEMENT
-STRING_LITERAL = 'STRING_LITERAL' #TODO IMPLEMENT
+CHAR_LITERAL = 'CHAR_LITERAL'
+STRING_LITERAL = 'STRING_LITERAL'
