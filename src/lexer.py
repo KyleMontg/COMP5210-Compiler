@@ -43,23 +43,31 @@ class Tokenizer:
 
     # Returns the character at next index
     def _peek(self) -> str|None:
-        if(self.index + 1 >= len(self.line)):
-            return None
-        return self.line[self.index + 1]
+        return (None if self.index + 1 >= len(self.line) else self.line[self.index + 1])
     
-    # If at EOF, return None
+    # Checks if self.index is out of bounds of len(self.line)
+    def _set_char(self) -> str|None:
+        return (None if self.index >= len(self.line) else self.line[self.index])
+
+    # If at EOL, return None
     def _clear_whitespace(self) -> str | None:
         if(self.index >= len(self.line)):
             return None
         char = self.line[self.index]
         while(not char.strip()):
             if(not self._peek()):
+                self._advance()
                 return None
             char = self._advance()
         return char
 
+    # All _is_* Returns None if it cant build Token
+
     def _is_identifier(self) -> Token|None:
-        char = self.line[self.index]
+        char = self._set_char()
+        if(not char):
+            return None
+        start_index = self.index
         if(not char.isalpha() and not char == '_'):
             return None
         ident = char
@@ -74,11 +82,14 @@ class Tokenizer:
                 break
         self._advance()
         if(keyword := KEYWORDS.get(ident)):
-            return Token(keyword, ident, self.line_num, self.index)
-        return Token(IDENTIFIER, ident, self.line_num, self.index)
+            return Token(keyword, ident, self.line_num, start_index)
+        return Token(IDENTIFIER, ident, self.line_num, start_index)
 
     def _is_number(self) -> Token|None:
-        char = self.line[self.index]
+        char = self._set_char()
+        if(not char):
+            return None
+        start_index = self.index
         if(not char.isdigit()):
             return None
         num = char
@@ -92,10 +103,13 @@ class Tokenizer:
             else:
                 break
         self._advance()
-        return Token(NUMBER, num, self.line_num, self.index)
+        return Token(NUMBER, num, self.line_num, start_index)
         
     def _is_symbol(self) -> Token|None:
-        char  = self.line[self.index]
+        char = self._set_char()
+        if(not char):
+            return None
+        start_index = self.index
         if(SYMBOLS.get(char) is None):
             return None
         symbol = char
@@ -108,20 +122,23 @@ class Tokenizer:
             char = self._advance()
             symbol += char
         self._advance()
-        return Token(SYMBOLS.get(symbol), symbol, self.line_num, self.index)
+        return Token(SYMBOLS.get(symbol), symbol, self.line_num, start_index)
 
     def _is_comment(self) -> bool:
-        char = self.line[self.index]
+        char = self._set_char()
+        if(not char):
+            return False
         next_char = self._peek()
         if(not next_char):
             return False
         comment = char + next_char
         if(comment == '//'):
+            self.index = len(self.line)
             return True
         return False
 
     def _build_literal(self, check_char: str) -> str:
-        char = self.line[self.index]
+        char = self._set_char()
         build_lit = char
         while(True):
             next_char = self._peek()
@@ -138,19 +155,22 @@ class Tokenizer:
         return(build_lit[1:-1])
 
     def _is_string_or_char(self) -> Token|None:
-        char = self.line[self.index]
+        char = self._set_char()
         if(not char):
             return None
+        start_index = self.index
         if(char == '"'):
             string_lit = self._build_literal('"')
-            return Token(STRING_LITERAL, string_lit, self.line_num, self.index)
+            return Token(STRING_LITERAL, string_lit, self.line_num, start_index)
         elif(char == "'"):
             char_lit = self._build_literal("'")
-            return Token(CHAR_LITERAL, char_lit, self.line_num, self.index)
+            return Token(CHAR_LITERAL, char_lit, self.line_num, start_index)
         return None
 
     def _is_mlc(self) -> Token|None:
-        char = self.line[self.index]
+        char = self._set_char()
+        if(not char):
+            return None
         next_char = self._peek()
         if(not char or not next_char):
             return None
@@ -161,23 +181,23 @@ class Tokenizer:
             self.index = mlc_end + 2
             return None
         self.in_mlc = True
-        return Token(EOF, None)
+        return Token(EOL, None)
 
 
     def _next_token(self) -> Token:
         if(self.in_mlc):
             mlc_end = self.line.find('*/')
             if mlc_end == -1:
-                return Token(EOF, None)
+                return Token(EOL, None)
             self.in_mlc = False
             self.index = mlc_end + 2
         char = self._clear_whitespace()
         token = None
         if(not char):
-            return Token(EOF, None)
+            return Token(EOL, None)
         if (self._is_comment()):
-            return Token(EOF, None)
-        for check in (self._is_identifier, self._is_number, self._is_mlc, self._is_symbol, self._is_string_or_char):
+            return Token(EOL, None)
+        for check in (self._is_string_or_char, self._is_identifier, self._is_number, self._is_mlc, self._is_symbol, ):
             token = check()
             if token:
                 return token
@@ -193,10 +213,10 @@ class Tokenizer:
             self.line_num = line_num
             while(True):
                 token = self._next_token()
-                if(token.type != EOF):
-                    token_list.append(token)
-                else:
+                token_list.append(token)
+                if(token.type == EOL):
                     break
+        token_list.append(Token(EOF,None))
         return token_list
 
     def set_new_file(self, file: list[str]|str):
