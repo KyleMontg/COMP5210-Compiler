@@ -12,6 +12,9 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 ## Usage
 ##### Run code
 >`python main.py "input_file"`
+**flags**
+> `-l` When flagged, output of lexer will be printed to console
+> `-o "file_location/file_name"` When flagged, output file name and directory can be specified, defaults to output.txt in main directory
 ##### Run Tests
 >`pytest`
 
@@ -22,7 +25,8 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 ### Lexical Specification
 > * No Preprocessing
 > * Only Support Integers
-> * Allows for multi-char char-constants
+> * Allows for multi-char `""` and char-constants `''`
+> * Char-constants accepts muliple chars but implementation is not decided yet
 > * No Escape sequences
 > * Supports single line and multiline comments
 >    ##### Unsuported punctuators
@@ -41,6 +45,7 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 
 ### To Do
 * Implement custom error handling
+* Allow for multiple number types
 # Tokens
 
 ***
@@ -159,9 +164,6 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 | EOF            | End-of-file marker       |
 | CHAR LITERAL   | Character literals       |
 | STRING LITERAL | String Literals          |
-
-
-
 
 # Sources
 * https://github.com/ShivamSarodia/ShivyC/ - used for help formatting README

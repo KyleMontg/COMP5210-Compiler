@@ -10,36 +10,36 @@ def test_keywords():
     tok = Tokenizer("")
     for case, token_type in KEYWORDS.items():
         tok.set_new_file(case)
-        assert(tok.tokenize() == [Token(token_type, case)])
+        assert(tok.tokenize() == [Token(token_type, case), Token(EOL,None), Token(EOF, None)])
 
 
 def test_symbols():
     tok = Tokenizer("")
     for case, token_type in SYMBOLS.items():
         tok.set_new_file(case)
-        assert(tok.tokenize() == [Token(token_type, case)])
+        assert(tok.tokenize() == [Token(token_type, case), Token(EOL,None), Token(EOF, None)])
 
 def test_comments():
     tok = Tokenizer('//')
-    assert(tok.tokenize() == [])
+    assert(tok.tokenize() == [Token(EOL,None), Token(EOF, None)])
 
     tok.set_new_file("/*")
-    assert(tok.tokenize() == [])
+    assert(tok.tokenize() == [Token(EOL,None), Token(EOF, None)])
 
 def test_other_tokens():
     tok = Tokenizer("cokezero")
-    assert(tok.tokenize() == [Token("IDENTIFIER", "cokezero")])
+    assert(tok.tokenize() == [Token("IDENTIFIER", "cokezero"), Token(EOL,None), Token(EOF, None)])
 
     tok.set_new_file("123")
-    assert(tok.tokenize() == [Token("NUMBER", "123")])
+    assert(tok.tokenize() == [Token("NUMBER", "123"), Token(EOL,None), Token(EOF, None)])
     tok.set_new_file("'AAAB' x")
-    assert(tok.tokenize() == [Token("CHAR_LITERAL", "AAAB"), Token("IDENTIFIER", "x")])
+    assert(tok.tokenize() == [Token("CHAR_LITERAL", "AAAB"), Token("IDENTIFIER", "x"), Token(EOL,None), Token(EOF, None)])
     tok.set_new_file('"AAAB" x')
-    assert(tok.tokenize() == [Token("STRING_LITERAL", "AAAB"), Token("IDENTIFIER", "x")])
+    assert(tok.tokenize() == [Token("STRING_LITERAL", "AAAB"), Token("IDENTIFIER", "x"), Token(EOL,None), Token(EOF, None)])
 
 def test_edge_cases():
     tok = Tokenizer("")
-    assert(tok.tokenize() == [])
+    assert(tok.tokenize() == [Token(EOF, None)])
 
 def test_code():
     test_path = Path(src_file, '/test/test_code')
