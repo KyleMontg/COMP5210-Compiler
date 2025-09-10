@@ -18,7 +18,7 @@ class Token:
 
     def __eq__(self, other) -> bool:
         return self.value == other.value and self.type == other.type
-        
+
 
 #TODO add option for not logging line numbers and char numbers
 class Tokenizer:
@@ -26,6 +26,7 @@ class Tokenizer:
 
     Raises:
         Exception: Unknown Token
+        Exception: Incomplete Literal
     """
     def __init__(self, file: list[str] | str):
         self.file = file.splitlines() if isinstance(file, str) else file
@@ -33,7 +34,7 @@ class Tokenizer:
         self.line_num = 0
         self.line = ''
         self.in_mlc = False
-    
+
     # Increments index of file by one
     def _advance(self) -> str|None:
         self.index += 1
@@ -44,7 +45,7 @@ class Tokenizer:
     # Returns the character at next index
     def _peek(self) -> str|None:
         return (None if self.index + 1 >= len(self.line) else self.line[self.index + 1])
-    
+
     # Checks if self.index is out of bounds of len(self.line)
     def _set_char(self) -> str|None:
         return (None if self.index >= len(self.line) else self.line[self.index])
@@ -104,7 +105,7 @@ class Tokenizer:
                 break
         self._advance()
         return Token(NUMBER, num, self.line_num, start_index)
-        
+
     def _is_symbol(self) -> Token|None:
         char = self._set_char()
         if(not char):
@@ -190,20 +191,20 @@ class Tokenizer:
             if mlc_end == -1:
                 return Token(EOL, None)
             self.in_mlc = False
-            self.index = mlc_end + 2
+            self.index = mlc_end + 2 + self.index
         char = self._clear_whitespace()
         token = None
         if(not char):
             return Token(EOL, None)
         if (self._is_comment()):
             return Token(EOL, None)
-        for check in (self._is_string_or_char, self._is_identifier, self._is_number, self._is_mlc, self._is_symbol, ):
+        for check in (self._is_mlc, self._is_string_or_char, self._is_identifier, self._is_number, self._is_symbol):
             token = check()
             if token:
                 return token
         unknown_token = f"Unknown Token: {char}, Line: {self.line_num + 1}, Char: {self.index + 1}"
         raise Exception(unknown_token) #TODO Implement Errors
-    
+
     # Iterate through list[str] and returns list[Token]
     def tokenize(self) -> list[Token]:
         token_list = []

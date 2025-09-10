@@ -3,9 +3,9 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 
 ***
 
-## Requirments
+## Requirements
 >* Python 3.12 or later
->* For testing you need pytests
+>* For testing you need pytest
 
 ***
 
@@ -23,13 +23,14 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 ## Implementation Overview
 
 ### Lexical Specification
-> * No Preprocessing
-> * Only Support Integers
+> * Preprocessing are tokenized but never processed
+> * Only Support base 10 unsigned integers
 > * Allows for multi-char `""` and char-constants `''`
-> * Char-constants accepts muliple chars but implementation is not decided yet
+> * Char-constants accepts multiple chars but implementation is not decided yet
 > * No Escape sequences
 > * Supports single line and multiline comments
->    ##### Unsuported punctuators
+> * Every line has an EOL token and every file has a EOF token
+>    ##### Unsupported punctuators
 >|||||
 >|---|---|---|---|
 >| ... | ## | <: | :>   |
@@ -46,6 +47,7 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 ### To Do
 * Implement custom error handling
 * Allow for multiple number types
+* Rewriting lexer for easier tokenization of complex tokens
 # Tokens
 
 ***
@@ -155,6 +157,7 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 | `;`    | SEMICOLON  |
 | `#`    | PREPROC    |
 | `.`    | DOT        |
+| `?`    | TERNARY    |
 
 ### Other Tokens
 | Token Name     | Description              |
@@ -162,8 +165,8 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 | IDENTIFIER     | User-defined identifiers |
 | NUMBER         | Numeric literals         |
 | EOF            | End-of-file marker       |
-| CHAR LITERAL   | Character literals       |
-| STRING LITERAL | String Literals          |
+| CHAR_LITERAL   | Character literals       |
+| STRING_LITERAL | String Literals          |
 
 # Sources
 * https://github.com/ShivamSarodia/ShivyC/ - used for help formatting README

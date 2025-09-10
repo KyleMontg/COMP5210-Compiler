@@ -103,6 +103,7 @@ SYMBOLS = {
     ";" : 'SEMICOLON',
     "#" : 'PREPROC',
     "." : 'DOT',
+    "?" : 'TERNARY'
 
 }
 
