@@ -1,0 +1,71 @@
+﻿<Program> ::= <TranslationUnit>* EOF
+<TranslationUnit> ::= <Function> | <DeclarationStatement>
+<DeclarationStatement> ::= <TypeSpecifiers> <VarDeclarationList> ";"
+<DeclarationTypes> ::= <DeclarationSpecifiers>* <TypeSpecifiers>
+<DeclarationSpecifiers> ::= CONST | STATIC | UNSIGNED | SIGNED
+<VarDeclarationList> ::= <VarDeclaration> ( "," <VarDeclaration> )*
+<VarDeclaration> ::= IDENTIFIER ( "=" <Expression> )?
+<Function> ::= <FunctionDefinition> | <FunctionDeclaration>
+<FunctionDeclaration> ::= <FunctionInit> ";"
+<FunctionDefinition> ::= <FunctionInit> <CompoundStatement>
+<CompoundStatement> ::= "{" (<DeclarationStatement> | <Statements>)* "}"
+<FunctionInit> ::= <DeclarationTypes> <FunctionDeclarator>
+<FunctionDeclarator> ::= IDENTIFIER "(" <FunctionParamList>? ")"
+<FunctionParamList> ::= <ParamDeclaration> ("," <ParamDeclaration> )*
+<ParamDeclaration> ::= <DeclarationTypes> IDENTIFIER?
+<TypeSpecifiers> ::= FLOAT | INT | SHORT | LONG | DOUBLE | CHAR | _BOOL | VOID
+<Statements> ::= <IfStatement>
+| <WhileStatement>
+| <DoWhileStatement>
+| <ForStatement>
+| <SwitchStatement>
+| <ReturnStatement>
+| <GotoStatement>
+| <BreakStatement>
+| <ContinueStatement>
+| <LabelStatement>
+| <DeclarationStatement>
+| <ExprStatement>
+<ExprStatement> ::= <Expression>? ";"
+<IfStatement> ::= "if" "(" <Expression> ")" <CompoundStatement> ("else" <CompoundStatement>)?
+<WhileStatement> ::= "while" "(" <Expression> ")" <CompoundStatement>
+<DoWhileStatement> ::= "do" <CompoundStatement> "while" "(" <Expression> ")" ";"
+<ForStatement> ::= "for" "(" (<DeclarationStatement> | ";") <Expression>? ";" <Expression>? ")" <CompoundStatement> # has to be decleration
+<SwitchStatement> ::= "switch" "(" <Expression> ")" <SwitchBody>
+<SwitchBody> ::= "{" <SwitchSection>* "}"
+<SwitchSection> ::= <SwitchLabel> <Statements>*
+<SwitchLabel> ::= "case" <Expression> ":" | "default" ":"
+<ReturnStatement> ::= "return" <Expression>? ";"
+<GotoStatement> ::= "goto" IDENTIFIER ";"
+<BreakStatement> ::= "break" ";"
+<ContinueStatement> ::= "continue" ";"
+<LabelStatement> ::= IDENTIFIER ":" <Statements>
+
+
+|------------------------------------------------------------------- ------|
+|    For all the expression handling, a Pratt parsing technique was used.  |
+|    The grammer below is not a 1 to 1 mapping of the parser               |
+|--------------------------------------------------------------------------|
+
+
+<Expression> ::= <AssignmentExpression>
+<AssignmentExpression> ::= <LogicalOrExpression>  | <UnaryExpression> <AssignmentOperator> <AssignmentExpression>
+<AssignmentOperator> ::= "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "<<=" | ">>=" | "&=" | "^=" | "|="
+<LogicalOrExpression> ::= <LogicalAndExpression> ( "||" <LogicalAndExpression> )*
+<LogicalAndExpression> ::= <BitwiseOrExpression> ( "&&" <BitwiseOrExpression> )*
+<BitwiseOrExpression> ::= <BitwiseXorExpression> ( "|" <BitwiseXorExpression> )*
+<BitwiseXorExpression> ::= <BitwiseAndExpression> ( "^" <BitwiseAndExpression> )*
+<BitwiseAndExpression> ::= <EqualityExpression> ( "&" <EqualityExpression> )*
+<EqualityExpression> ::= <RelationalExpression> ( ("==" | "!=") <RelationalExpression> )*
+<RelationalExpression> ::= <ShiftExpression> ( ("<" | ">" | "<=" | ">=") <ShiftExpression> )*
+<ShiftExpression> ::= <AdditiveExpression> ( ("<<" | ">>") <AdditiveExpression> )*
+<AdditiveExpression> ::= <MultiplicativeExpression> ( ("+" | "-") <MultiplicativeExpression> )*
+<MultiplicativeExpression> ::= <UnaryExpression> ( ("*" | "/" | "%") <UnaryExpression> )*
+<UnaryExpression> ::= <PrefixOperator> <UnaryExpression> | <PostfixExpression>
+<PrefixOperator> ::= "++" | "--" | "+" | "-" | "!" | "~"
+<PostfixExpression> ::= <PrimaryExpression> <PostfixOp>*
+<PostfixOp> ::= "++" | "--"
+| "(" <ArgumentExpressionList>? ")"
+| "." IDENTIFIER
+<ArgumentExpressionList> ::= <Expression> ("," <Expression> )*
+<PrimaryExpression> ::= IDENTIFIER | NUMBER | STRING_LITERAL | "(" <Expression> ")"

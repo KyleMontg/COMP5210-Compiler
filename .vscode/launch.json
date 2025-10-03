@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["-l","test/test_code/test_comments.c"]
+            "args": ["-l","test/test_code/hello_world.c"]
         }
     ]
 }
