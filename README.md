@@ -76,7 +76,7 @@ Currently implemented parts: Lexer, Parser, Symbol Table
 
 
 # To-Do
-> * Add support for predefined veriables and functions\
+> * Add support for predefined veriables and functions
 > * Add label support
 
 
