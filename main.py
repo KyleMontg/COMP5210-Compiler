@@ -1,11 +1,17 @@
 import argparse
 import sys
+import importlib
 from pathlib import Path
 from src import *
-from dataclasses import is_dataclass, asdict
+import copy
 
 def create_arguments() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Tokenizes a C file')
+    parser.add_argument(
+        'input',
+        type=Path,
+        help='Path to input file',
+    )
     parser.add_argument(
         '-l',
         required=False,
@@ -25,27 +31,29 @@ def create_arguments() -> argparse.ArgumentParser:
         help='Prints Token Table to console',
     )
     parser.add_argument(
-        '-o',
-        '--output',
+        '-w',
+        '--write',
         required=False,
         type=Path,
         help='Specify path to output file. Defaults to ./output.txt',
     )
     parser.add_argument(
-        'input',
-        type=Path,
-        help='Path to input file',
+        '-o0',
+        required=False,
+        action='store_true',
+        help='Three Address Code without optimizations',
     )
+    parser.add_argument(
+        '-o1',
+        required=False,
+        action='store_true',
+        help='Three Address Code with constant folding pass',
+    )
+
     return parser
 
-def ast_to_json(ast):
-    if ast is None:
-        return None
-    if is_dataclass(ast):
-        return {key: ast_to_json(value) for key, value in asdict(ast).items()}
-    return ast
 
-def run_compiler(input_path: Path, output_path: Path, print_outputs: bool) -> None:
+def run_compiler(input_path: Path, output_path: Path, print_outputs: list) -> None:
 
     try:
         source = input_path.read_text()
@@ -74,7 +82,9 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: bool) -> No
         sys.exit(1)
 
     if print_outputs[1]:
-        print(f'AST:\n\n{ast_to_json(ast)}\n\n')
+        print('AST:\n')
+        print(pretty_ast(ast))
+        print('\n')
 
     try:
         sym_table = SymbolTable()
@@ -86,6 +96,25 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: bool) -> No
 
     if print_outputs[2]:
         print(f'Symbol Table\n\n{sym_table.dump()}\n\n')
+
+
+    try:
+        tac = TAC()
+        tac.generate_tac(ast, sym_table)
+        optimized = constant_fold(copy.deepcopy(tac))
+    except TACError as err:
+        print(f"Three Address Code error: {err}")
+        sys.exit(1)
+
+    if print_outputs[3]:
+        print('Three Address Code without optimization: \n\n')
+        print(pretty_tac(tac))
+        print('\n\n')
+
+    if print_outputs[4]:
+        print(f'Three Address Code with Constant Folding: \n\n')
+        print(pretty_tac(optimized))
+        print('\n\n')
 
     try:
         with open(output_path, 'w') as file:
@@ -100,12 +129,13 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: bool) -> No
 
 
 
+
 if __name__ == '__main__':
     parser = create_arguments()
     args = parser.parse_args()
 
-    print_outputs = [args.l, args.a, args.t]
-    output_path = (Path.cwd() / args.output) if args.output else (Path.cwd() / 'output.txt')
+    print_outputs = [args.l, args.a, args.t, args.o0, args.o1]
+    output_path = (Path.cwd() / args.write) if args.write else (Path.cwd() / 'output.txt')
     input_path = Path.cwd() / args.input
 
     run_compiler(input_path, output_path, print_outputs)

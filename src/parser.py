@@ -73,7 +73,7 @@ class Parser:
             return decl
         return None
 
-    # <DeclarationStatement> ::= <DeclarationType> <VarDeclarationList> ";"
+    # <DeclarationStatement> ::= <DeclarationTypes> <VarDeclarationList> ";"
     def _declaration_statement(self):
         decl_type = self._declaration_types()
         if(decl_type is None):
@@ -137,7 +137,7 @@ class Parser:
         statements = self._compound_statement()
         if(statements is None):
             return None
-        return FunctionDefinition(decl_type, identifier, parameters, statements)
+        return FunctionDefinition(decl_type, identifier, parameters, statements) # type: ignore
 
     # <FunctionInit> ::= <DeclarationTypes> <FunctionDeclarator>
     def _function_init(self):
@@ -525,7 +525,7 @@ class Parser:
     def _parse_prefix(self):
         if self._match(*PREFIX_OPERATORS):
             prefix = self._expect(list(PREFIX_OPERATORS))
-            operand = self._expression(TOKEN_PREC.get('PREFIX'))
+            operand = self._expression(TOKEN_PREC.get('PREFIX')) # type: ignore
             return PrefixExpression(prefix, operand)
         # If no prefix
         primary = self._parse_primary()
@@ -581,7 +581,7 @@ class Parser:
                 if (self._expect('RPAREN') is None):
                     return None
                 return CallExpression(node, args)
-            expr = self._expression()
+            expr = self._expression(TOKEN_PREC['COMMA'] + 1)
             if expr is None:
                 return None
             args.append(expr)
@@ -589,7 +589,7 @@ class Parser:
                 self._expect('COMMA')
                 if self._match('RPAREN'):
                     break
-                args.append(self._expression())
+                args.append(self._expression(TOKEN_PREC['COMMA'] + 1))
             if self._expect('RPAREN') is None:
                 return None
             return CallExpression(node, args)

@@ -2,6 +2,8 @@
 A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 Currently implemented parts: Lexer, Parser, Symbol Table
 
+Hours Spent: 15
+
 ># Table of Contents
 >[Requirements](#requirements)
 >[Usage](#Usage)
@@ -24,7 +26,7 @@ Currently implemented parts: Lexer, Parser, Symbol Table
 > `-l` Contents of lexer will be printed to console
 > `-a` Contents of Parser will be printed to console
 > `-t` Contents of Symbol Table will be printed to console
-> `-o "file_location/file_name"` When flagged, output file name and directory can be specified, defaults to output.txt in main directory
+> `-w "file_location/file_name"` When flagged, output file name and directory can be specified, defaults to output.txt in main directory
 ##### Run Tests
 >`test_runner.py`
 **flags**
@@ -272,6 +274,13 @@ The tokens I chose to implement were a subsection of the C99 ISO Standard found 
 `| "." IDENTIFIER`
 `<ArgumentExpressionList> ::= <Expression> ("," <Expression> )*`
 `<PrimaryExpression> ::= IDENTIFIER | NUMBER | STRING_LITERAL | "(" <Expression> ")"`
+
+# ToDo
+    Fixes: Function Definition has a list for body but only contains compound statement, declaration statement has it as a list, remove all different types of assign
+
+    Move Instruction() to get_block funciton
+
+
 
 
 # Sources

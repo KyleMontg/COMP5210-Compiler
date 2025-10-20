@@ -4,7 +4,7 @@ int classify(int value) {
             return 0;
         case 1:
             return 1;
-        default:
+        case 2:
             return -1;
     }
 }

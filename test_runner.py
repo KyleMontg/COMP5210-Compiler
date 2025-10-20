@@ -24,6 +24,12 @@ def create_arguments() -> argparse.ArgumentParser:
         action='store_true',
         help='runs tests on symbol_table.py',
     )
+    parser.add_argument(
+        '-o',
+        required=False,
+        action='store_true',
+        help='runs tests on tac.py',
+    )
     return parser
 
 class TestHandler():
@@ -91,11 +97,44 @@ class TestHandler():
             print(f'{test_name} sucessfully parsed!')
         print('\nDone Testing Parser')
 
+    def test_tac(self):
+        for filename in Path('test/test_code/').glob('*.c'):
+            source = filename.read_text()
+            test_name = filename.stem
+            try:
+                tokenizer = Tokenizer(source)
+                toks = tokenizer.tokenize()
+                parser = Parser(toks)
+                ast_toks = parser.parse()
+                sym_tab = SymbolTable()
+                sym_tab.build_symbol_table(ast_toks)
+                tac = TAC()
+                ir = tac.generate_tac(ast_toks, sym_tab)
+                print(pretty_tac(tac))
+
+            except LexerError as err:
+                print(f'\nLexer Failed at {test_name}:\n')
+                print(err)
+                continue
+            except ParserError as err:
+                print(f'\nParser Failed at {test_name}:\n')
+                print(err)
+                continue
+            except SymbolTableError as err:
+                print(f'\nSymbolTable Failed at {test_name}:\n')
+                print(err)
+                continue
+            except TACError as err:
+                print(f'\nTAC Failed at {test_name}:\n')
+                print(err)
+            print(f'{test_name} sucessfully parsed!\n\n')
+        print('\nDone Testing Parser')
+
 
 if __name__ == '__main__':
     parser = create_arguments()
     args = parser.parse_args()
-    test_lexer, test_parser, test_ast = args.l, args.a, args.t
+    test_lexer, test_parser, test_ast, test_tac = args.l, args.a, args.t, args.o
     tester = TestHandler()
     if(test_lexer):
         tester.test_lexer()
@@ -103,3 +142,5 @@ if __name__ == '__main__':
         tester.test_parser()
     if(test_ast):
         tester.test_symbol_table()
+    if(test_tac):
+        tester.test_tac()

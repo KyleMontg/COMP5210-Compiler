@@ -8,8 +8,6 @@ int test(int value) {
         case 3:
             result = 9;
             break;
-        default:
-            result = -1;
     }
     return result;
 }

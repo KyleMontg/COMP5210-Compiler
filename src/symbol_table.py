@@ -21,7 +21,7 @@ class Scope:
 
     def add(self, name, data):
         if name in self.symbols:
-            raise SymbolTableError('Cant re-declare variable: {name}')
+            raise SymbolTableError(f'Cant re-declare variable: {name}', None)
         self.symbols[name] = Symbol(name, data, self.id)
 
     def __repr__(self):
@@ -52,7 +52,7 @@ class SymbolTable:
 
     def _exit_scope(self):
         if self.current_scope.parent is None:
-            raise SymbolTableError('Can no back escape global scope')
+            raise SymbolTableError('Can not back escape global scope', None)
         self.current_scope = self.current_scope.parent
 
     def _add_symbol(self, name, data):
@@ -88,8 +88,23 @@ class SymbolTable:
             elif isinstance(unit, DeclarationStatement):
                 self._add_decl_stmt(unit, 'global')
 
-    def _add_function(self, func): #TODO Add tracking for predefined tracking
-        self._add_symbol(func.func_ident.value,
+    def _add_function(self, func):
+        name = func.func_ident.value
+        cur = self.current_scope
+        existing = cur.symbols.get(name)
+        if existing is not None:
+            if existing.data.get('kind') == 'func':
+                prev_type = existing.data.get('type')
+                new_type = func.func_type.base.value
+                if prev_type != new_type:
+                    raise SymbolTableError(f"Function re-declared with different type: {name}", func.func_ident)
+                existing.data['line'] = func.func_ident.line_num
+                existing.data['char'] = func.func_ident.char_num
+                return
+            # Name exists but not as a function – real conflict
+            raise SymbolTableError(f"Cant re-declare variable: {name}", func.func_ident)
+
+        self._add_symbol(name,
                         {'kind': 'func',
                          'type': func.func_type.base.value,
                          'line': func.func_ident.line_num,
