@@ -165,7 +165,7 @@ class TAC:
 
     def _assign_expr(self, expr: AssignmentExpression):
         operator = expr.operator # has to be a token
-        left = expr.left # has to be an identifier
+        left = expr.left.token # has to be an identifier
         right = self._get_expression(expr.right)
         # For operator assigns, do operation with temp var, then assign
         if(operator.type == 'ASSIGN'):
@@ -351,15 +351,13 @@ class TAC:
         label_tok = Token('LABEL', 'label')
         while_tok = Token('WHILESTMT', 'while')
         label_start = Instruction('LABEL', self._get_label(), None, None, label_tok)
-        label_cond = Instruction('LABEL', self._get_label(), None, None, label_tok)
         label_end = Instruction('LABEL', self._get_label(), None, None, label_tok)
         # while body
         self._push_to_block(label_start)
-        self._push_ctrl(label_end.res, label_cond.res)
+        self._push_ctrl(label_end.res)
         self._loop_stmts(while_tok, stmt.body)
         self._pop_ctrl()
         # check condition
-        self._push_to_block(label_cond)
         condition = self._get_expression(stmt.condition)
         # while instructions are formatted:
         # 1. condition

@@ -6,3 +6,6 @@ from .errors import *
 from .tac import *
 from .print_structures import *
 from .optimizations.constant_fold import *
+from .optimizations.copy_propagation import *
+from .tac_diff import *
+from .optimizations.dead_code_elimination import *
