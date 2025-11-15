@@ -234,7 +234,6 @@ class TAC:
         else:
             raise TACError('Invalid Postfix Structure', postfix)
         if(operand.type == 'INCREMENT' or operand.type == 'DECREMENT'):
-            self._push_to_block(Instruction('ASSIGN', pre_incement, ident))
             self._push_to_block(Instruction('ASSIGN', ident, ident, Token(NUMBER, '1'), operand ))
         else:
             raise TACError('Invalid Postfix Structure', operand.type)
@@ -281,7 +280,7 @@ class TAC:
     def _switch_stmt(self, stmt: SwitchStatement):
         label_tok = Token('LABEL', 'label')
         case_tok = Token('CASE', 'case')
-        label_end = Instruction(self._get_label(), None, None, label_tok)
+        label_end = Instruction('LABEL', self._get_label(), None, None, label_tok)
         self._push_ctrl(label_end.res)
         for cases in stmt.body:
             # Creates a an if statement with control flow for true and false
@@ -374,6 +373,7 @@ class TAC:
         condition = self._get_expression(stmt.condition)
         label_true = Instruction('LABEL', self._get_label(), None, None, label_tok)
         label_false = Instruction('LABEL', self._get_label(), None, None, label_tok)
+        label_end = Instruction('LABEL', self._get_label(), None, None, label_tok)
         # if instructions are formatted:
         # 1. condition
         # 2. if true goto
@@ -383,10 +383,13 @@ class TAC:
         # if true
         self._push_to_block(label_true)
         self._loop_stmts(if_tok, stmt.then_branch)
+        self._goto_stmt(label_end.res)
         # if false
         self._push_to_block(label_false)
         if(stmt.else_branch is not None):
             self._loop_stmts(if_tok, stmt.else_branch)
+        self._goto_stmt(label_end.res)
+        self._push_to_block(label_end)
 
     def _loop_stmts(self, tok, stmts):
         stmt_list = stmts.items
@@ -449,13 +452,14 @@ class TAC:
     def _return_stmt(self, stmt: ReturnStatement):
         value = self._get_expression(stmt.expression)
         self._push_to_block(Instruction('RETURN' ,value, None, None, Token('RETURN', 'return')))
+        self._push_to_block(Instruction('LABEL', self._get_label(), None, None, Token('LABEL', 'label')))
 
     def _label_stmt(self, name = None):
         if name is None:
             name = self._get_label()
         self._push_to_block(Instruction('LABEL', name, None, None, Token('LABEL', 'label')))
 
-    def _goto_stmt(self, name):
+    def _goto_stmt(self, name: Instruction):
         self._push_to_block(Instruction('GOTO', name, None, None, Token('GOTO', 'goto')))
 
     def _break_stmt(self):

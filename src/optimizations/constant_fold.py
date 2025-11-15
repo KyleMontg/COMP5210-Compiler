@@ -3,9 +3,177 @@
 
 
 """
-To Fix code i need to track if a change is made and if made then remove origonal instruction after block execution
+block ?:
+    DECL    res=<identifier token>, left=<initializer token/temp>, right=None, op=None
+    ASSIGN  res=<target>, left=<operand>, right=<operand or None>, op=<operator token>
+    PARAM   res=Token('PARAM','param'), left=<argument value>, right=None, op=None
+    CALL    res=<temp for return>, left=<callee name>, right=None, op=Token('CALL','call')
+    LABEL   res=<label name string>, left=None, right=None, op=Token('LABEL','label')
+    GOTO    res=<target label>, left=None, right=None, op=Token('GOTO','goto')
+    IF      res=<condition temp>, left=<true label>, right=<false label>, op=Token('IFSTMT','if')
+    FOR     res=<condition temp>, left=<body label>, right=<exit label>, op=Token('FORSTMT','for')
+    WHILE   res=<condition temp>, left=<body label>, right=<exit label>, op=Token('WHILESTMT','while')
+    RETURN  res=<value temp/literal>, left=None, right=None, op=Token('RETURN','return')
 """
+
 from src.tac import *
+
+def constant_fold(cfg): # type: ignore
+    for node_list in cfg:
+        head = node_list[0]
+        if head is None:
+            continue
+        entry = {}
+        exit = {}
+        cur_block = head.block
+
+        # for every variable in a node, look for what its defined by and what it depends on
+            # if its defined in that block and a constant add to substitution list
+                # substitute varable in that node with the constant
+            # if constant numbers, use a fold
+            # if its not but
+
+
+def _traverse_block(block, known):
+    # track variable assingments in block
+    for instr in block.instr_list:
+
+        if(instr.instr_type == 'DECL'):
+            if(instr.left is None):
+                continue
+            if(instr.left.type == 'NUMBER'):
+                # add constant to now known
+                known[instr.res.value] = Token(instr.left.type, instr.left.value)
+            elif(instr.left.type == 'IDENTIFIER'):
+                # check to see if identifier has a constant
+                value = known.get(instr.left.value)
+                if value == 'unknown':
+                    # if identifier known and not a constant
+                    known[instr.res.value] = 'unknown'
+                elif(value is not None):
+                    # replace value with constant
+                    # update known with now known constant
+                    instr.left = Token(value.token_type, value.value)
+                    known[instr.res.value] = Token(value.token_type, value.value)
+                else:
+                    known[instr.res.value] = 'unknown'
+
+        if(instr.instr_type == 'ASSIGN'):
+            if(instr.left is not None):
+                # handle if no operator and single number
+                if(instr.left.type == 'NUMBER' and instr.right is None):
+                    # add constant to now known
+                    known[instr.res.value] = Token(instr.left.type, instr.left.value)
+                elif(instr.left.type == 'IDENTIFIER'):
+                    # check to see if identifier has a constant
+                    value = known.get(instr.left.value)
+                    if value == 'unknown':
+                        # if identifier known and not a constant
+                        known[instr.res.value] = 'unknown'
+                    elif(value is not None):
+                        # replace value with constant
+                        # update known with now known constant
+                        instr.left = Token(value.token_type, value.value)
+                    else:
+                        known[instr.res.value] = 'unknown'
+
+            if(instr.right is not None):
+                if(instr.right.type == 'IDENTIFIER'):
+                    value = known.get(instr.right.value)
+                    if value == 'unknown':
+                        # if identifier known and not a constant
+                        known[instr.res.value] = 'unknown'
+                    elif(value is not None):
+                        # replace value with constant
+                        # update known with now known constant
+                        instr.right = Token(value.token_type, value.value)
+                    else:
+                        known[instr.res.value] = 'unknown'
+
+
+        if(instr.instr_type == 'PARAM'):
+            ...
+
+        if(instr.instr_type == 'CALL'):
+            pass
+
+        if(instr.instr_type == 'LABEL'):
+            pass
+
+        if(instr.instr_type == 'IF'):
+            ...
+
+        if(instr.instr_type == 'FOR'):
+            ...
+
+        if(instr.instr_type == 'WHILE'):
+            ...
+
+        if(instr.instr_type == 'GOTO'):
+            ...
+
+        if(instr.instr_type == 'RETURN'):
+            ...
+
+    return known
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+
 
 class FoldLookup:
     def __init__(self, instr: Instruction, index: int, is_used: bool, is_redefined: bool):
@@ -14,7 +182,22 @@ class FoldLookup:
         self.is_used = is_used
         self.is_redefined = is_redefined
 
-def constant_fold(tac: TAC):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def constant_fold(tac: TAC, cfg: list):
     func_list = tac.functions
     for func_block in func_list:
         for blocks in func_block.blocks:
@@ -128,3 +311,4 @@ def _assign_is_num(instr: Instruction):
 # find decl that is a number
 # look for assignments and decl that use end
 # stop if that variable it redefined
+'''

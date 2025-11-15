@@ -2,7 +2,7 @@
 from src.tac import *
 
 
-def dead_code_elimination(tac: TAC):
+def dead_code_elimination(tac: TAC, cfg: list):
     func_list = tac.functions
     for func_block in func_list:
         for blocks in func_block.blocks:

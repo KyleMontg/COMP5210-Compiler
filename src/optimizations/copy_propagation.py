@@ -1,7 +1,7 @@
 
 #Instruction Types: ASSIGN, PARAM, CALL, LABEL, IF, FOR, WHILE, DECL, RETURN, GOTO
 from src.tac import *
-def copy_propagation(tac: TAC):
+def copy_propagation(tac: TAC, cfg: list):
     func_list = tac.functions
     for func_block in func_list:
         for blocks in func_block.blocks:

@@ -101,10 +101,11 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: list) -> No
     try:
         tac = TAC()
         tac.generate_tac(ast, sym_table)
+        cfg = build_cfg(tac)
     except TACError as err:
         print(f"Three Address Code error: {err}")
         sys.exit(1)
-
+    '''
     try:
         pre_optimized = tac
         post_optimized = None
@@ -124,7 +125,7 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: list) -> No
     except TACError as err:
         print(f"Three Address Code error: {err}")
         sys.exit(1)
-
+    '''
 
     if print_outputs[3]:
         print('Three Address Code without optimization: \n\n')

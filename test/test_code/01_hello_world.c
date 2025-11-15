@@ -1,6 +1,9 @@
 
 void main() {
-    int x = 5;
-    int y = 2;
-    return x;
+    int x = 1;
+    int y = 2 + x;
+    while(y < 10){
+        y++;
+    }
+    return 0;
 }
