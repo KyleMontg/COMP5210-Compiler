@@ -125,7 +125,6 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: list) -> No
                 break
             else:
                 pre_optimized = copy.deepcopy(post_optimized)
-        tac_to_asm(post_optimized, 0)
 
     except TACError as err:
         print(f"Three Address Code error: {err}")
@@ -143,7 +142,7 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: list) -> No
         print('\n\n')
 
     try:
-        asm = tac_to_asm(post_optimized, 0)
+        asm = tac_to_asm(post_optimized)
     except ASMError as err:
         print(f'Error in Generating ASM: {err}')
         sys.exit(1)

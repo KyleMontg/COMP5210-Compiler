@@ -54,7 +54,7 @@ class TAC:
                 new_block = BasicBlock()
                 self.cur_func.blocks.append(new_block)
                 self.cur_block = new_block
-            self.cur_block.instr_list.append(instr)
+            self.cur_block.instr_list.append(instr)  # type: ignore
 
     def _get_temp_var(self):
         temp_name = f'%t{self.temp_var_count}'

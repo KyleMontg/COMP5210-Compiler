@@ -1,18 +1,27 @@
 from src.tac import *
 
+
+class ASM:
+    '''
+    Stores list of ASM instructions
+    '''
+    def __init__(self):
+        self.instr_list = []
+
 class Offset_Map:
+    '''
+    Stores a map of variable names and their offset for thier memory location
+    '''
     def __init__(self, register: str):
         self.offset = 8
         self.var_map = {}
         self.register = register
 
-    def lookup(self, var, add_if_not_found=False):
+    def lookup(self, var):
         location = self.var_map.get(var, None)
-        if(location is None and add_if_not_found):
+        if(location is None):
             self.set_loc(var)
             location = self.var_map.get(var)
-        elif(location is None):
-            raise Exception()
         return location
 
     def set_loc(self, var):
@@ -20,15 +29,98 @@ class Offset_Map:
         self.offset += 8
 
 
-def tac_to_asm(tac:TAC, num_regs: int):
-    #regs = {}
-    #for i in range(num_regs):
-    #    regs[f"%r{i}"] = None
-    #lru = []
-    asm = []
 
-    offset_map = Offset_Map("rbp")
+class RegAllocator:
+    '''
+    Handles storing variables into memory and registers
+    '''
+    def __init__(self, num_regs, asm):
+        self.lru = []
+        self.asm = asm.instr_list
+        self.offset_map = Offset_Map("%fp")
+        self.reg_map = {}
+        self.regs = {}
+        for i in range(num_regs):
+            self.regs[f"%r{i}"] = None
+        self.free_reg = []
+        for i in range(num_regs):
+            self.free_reg.append(f"%r{i}")
 
+    def _mark_used(self, reg):
+        '''
+        Updates the Register to the front of Least Recently Used List
+        '''
+        if reg in self.lru:
+            self.lru.remove(reg)
+        self.lru.append(reg)
+
+    def _store_var(self, reg):
+        '''
+        Stores the variable in a register to a frame
+        '''
+        var = self.regs[reg]
+        if var is not None:
+            store_loc = self.offset_map.lookup(var)
+            self.asm.append(mov_instr(store_loc, reg))
+            self.reg_map.pop(var, None)
+            self.regs[reg] = None
+
+    def _alloc_reg(self):
+        '''
+        Gets a free register or releases a register to be used
+        '''
+        if self.free_reg:
+            reg = self.free_reg.pop(0)
+        else:
+            reg = self.lru.pop(0)
+            self._store_var(reg)
+        self._mark_used(reg)
+        return reg
+
+    def get_reg(self, var):
+        '''
+        Returns a register that holds var
+        '''
+        # Assign frame offset if var does not have one
+        frame_loc = self.offset_map.lookup(var)
+        if var in self.reg_map:
+            reg = self.reg_map[var]
+            self._mark_used(reg)
+            return reg
+        reg = self._alloc_reg()
+        self.asm.append(mov_instr(reg, frame_loc))
+        self.regs[reg] = var
+        self.reg_map[var] = reg
+        self._mark_used(reg)
+        return reg
+
+    def assign_reg(self, var, reg):
+        '''
+        Assigns a specific register to a specific variable
+        '''
+        if(self.regs[reg] not in (None, var)):
+            self._store_var(reg)
+        old_reg = self.reg_map.get(var, None)
+        if old_reg is not None and old_reg != reg:
+            self.regs[old_reg] = None
+            self.reg_map.pop(var, None)
+            if old_reg not in self.free_reg:
+                self.free_reg.append(old_reg)
+        self.regs[reg]= var
+        self.reg_map[var] = reg
+        self._mark_used(reg)
+
+
+
+def tac_to_asm(tac:TAC, num_regs = 12):
+    '''
+    Reads Three Address Code and Produces Assembly X64
+    '''
+    if(num_regs < 3):
+        raise ASMError("ASM Generator requires at least 3 registers")
+    asm_obj = ASM()
+    asm = asm_obj.instr_list
+    reg_all = RegAllocator(num_regs, asm_obj)
 
     func_list = tac.functions
     for func_blocks in func_list:
@@ -38,55 +130,48 @@ def tac_to_asm(tac:TAC, num_regs: int):
                 if(instr.instr_type == 'DECL'):
                     if(instr.left is not None):
                         asm.append(f"; {instr.res.value} = {instr.left.value}")
-                        asm = decl_instr(instr, asm, offset_map)
-                    # Add constant vs, variable
+                        decl_instr(instr, asm, reg_all)
 
                 elif(instr.instr_type == 'ASSIGN'):
                     if(instr.op is None):
                         asm.append(f"; {instr.res.value} = {instr.left.value}")
-                        asm = decl_instr(instr, asm, offset_map)
+                        decl_instr(instr, asm, reg_all)
 
                     elif(instr.op.type == "PLUS"):
                         asm.append(f"; {instr.res.value} = {instr.left.value} + {instr.right.value}")
-                        asm = creat_instr(instr, "rax", add_instr, asm, offset_map)
+                        creat_instr(instr, add_instr, asm, reg_all)
 
                     elif(instr.op.type == "MINUS"):
                         asm.append(f"; {instr.res.value} = {instr.left.value} - {instr.right.value}")
-                        asm = creat_instr(instr, "rax", sub_instr, asm, offset_map)
+                        creat_instr(instr, sub_instr, asm, reg_all)
 
                     elif(instr.op.type == "MULTIPLY"):
                         asm.append(f"; {instr.res.value} = {instr.left.value} * {instr.right.value}")
-                        asm = creat_instr(instr, "rax", mul_instr, asm, offset_map)
+                        creat_instr(instr, mul_instr, asm, reg_all)
 
                     elif(instr.op.type == "DIVIDE"):
                         asm.append(f"; {instr.res.value} = {instr.left.value} / {instr.right.value}")
-                        asm = div_instr(instr, asm, offset_map)
+                        div_instr(instr, asm, reg_all)
 
                     elif(instr.op.type == "MODULUS"):
                         asm.append(f"; {instr.res.value} = {instr.left.value} % {instr.right.value}")
-                        asm = mod_instr(instr, asm, offset_map)
+                        mod_instr(instr, asm, reg_all)
 
                     elif(instr.op.type == "GREATERTHAN"):
                         asm.append(f"; {instr.res.value} = {instr.left.value} > {instr.right.value}")
-                        asm = g_than_instr(instr, asm, offset_map)
+                        lg_than_instr(instr, asm, 'g', reg_all)
 
                     elif(instr.op.type == "LESSTHAN"):
                         asm.append(f"; {instr.res.value} = {instr.left.value} < {instr.right.value}")
-                        asm = l_than_instr(instr, asm, offset_map)
+                        lg_than_instr(instr, asm, 'l', reg_all)
 
                     elif(instr.op.type == "INCREMENT"):
                         asm.append(f"; {instr.res.value} = {instr.left.value}++")
-                        store_loc = offset_map.lookup(instr.res.value, True)
-                        asm.append(mov_instr("rax", store_loc))
-                        asm.append(add_instr("rax", 1))
-                        asm.append(mov_instr(store_loc, "rax"))
+                        incr_instr(instr, asm, reg_all)
 
                     elif(instr.op.type == "DECREMENT"):
                         asm.append(f"; {instr.res.value} = {instr.left.value}--")
-                        store_loc = offset_map.lookup(instr.res.value, True)
-                        asm.append(mov_instr("rax", store_loc))
-                        asm.append(sub_instr("rax", 1))
-                        asm.append(mov_instr(store_loc, "rax"))
+                        decr_instr(instr, asm, reg_all)
 
                     else:
                         raise NotImplementedError
@@ -98,7 +183,8 @@ def tac_to_asm(tac:TAC, num_regs: int):
                     asm.append(f"{instr.res}:")
 
                 elif(instr.instr_type in {'IF', 'WHILE', 'FOR'}):
-                    store_loc = offset_map.lookup(instr.res.value, True)
+                    store_loc = reg_all._alloc_reg()
+                    reg_all.assign_reg(instr.res.value, store_loc)
                     asm.append(cmp_instr(store_loc, 0))
                     asm.append(jne_instr(instr.left))
                     asm.append(jmp_instr(instr.right))
@@ -145,99 +231,100 @@ def jmp_instr(l):
 def jne_instr(l):
     return f"jne {l}"
 
-def creat_instr(instr, r, func_instr, asm, offset_map):
-    store_loc = offset_map.lookup(instr.res.value, True)
+def incr_instr(instr, asm, reg_all):
+    # Increments a registers value by 1
+    store_loc = reg_all.get_reg(instr.res.value)
+    asm.append(add_instr(store_loc, 1))
+
+def decr_instr(instr, asm, reg_all):
+    # Decrements a registers value by 1
+    store_loc = reg_all.get_reg(instr.res.value)
+    asm.append(sub_instr(store_loc, 1))
+
+def creat_instr(instr, func_instr, asm: list, reg_all: RegAllocator):
+    # Handles Addition, Subtraction, and Multiplication
+    # Get a new register
+    store_loc = reg_all._alloc_reg()
     if(instr.left.type == "NUMBER"):
-        asm.append(mov_instr(r, instr.left.value))
+        asm.append(mov_instr(store_loc, instr.left.value))
     else:
-        left_loc = offset_map.lookup(instr.left.value)
-        asm.append(mov_instr(r, left_loc))
+        left_reg = reg_all.get_reg(instr.left.value)
+        asm.append(mov_instr(store_loc, left_reg))
 
     if(instr.right.type == "NUMBER"):
-        asm.append(func_instr(r, instr.right.value))
+        asm.append(func_instr(store_loc, instr.right.value))
     else:
-        right_loc = offset_map.lookup(instr.right.value)
-        asm.append(func_instr(r, right_loc))
-    asm.append(mov_instr(store_loc, r))
-    return asm
+        right_reg = reg_all.get_reg(instr.right.value)
+        asm.append(func_instr(store_loc, right_reg))
+    reg_all.assign_reg(instr.res.value, store_loc)
 
-def div_instr(instr, asm, offset_map): # Add custom register support
-    store_loc = offset_map.lookup(instr.res.value, True)
+def div_instr(instr, asm, reg_all: RegAllocator): # Add custom register support
     if(instr.left.type == "NUMBER"):
-        asm.append(mov_instr("rax", instr.left.value))
+        left_reg = reg_all._alloc_reg()
+        asm.append(mov_instr(left_reg, instr.left.value))
     else:
-        left_loc = offset_map.lookup(instr.left.value)
-        asm.append(mov_instr("rax", left_loc))
+        left_reg = reg_all.get_reg(instr.left.value)
 
     if(instr.right.type == "NUMBER"):
-        asm.append(mov_instr("rbx", instr.right.value))
+        right_reg = reg_all._alloc_reg()
+        asm.append(mov_instr(right_reg, instr.right.value))
     else:
-        right_loc =  offset_map.lookup(instr.right.value)
-        asm.append(mov_instr("rbx", right_loc))
+        right_reg = reg_all.get_reg(instr.right.value)
+    # Extend register
     asm.append(cqo_instr())
-    asm.append(idiv_instr("rbx"))
-    asm.append(mov_instr(store_loc, "rax"))
-    return asm
+    # Divide by right value
+    asm.append(idiv_instr(right_reg))
+    # Store
+    reg_all.assign_reg(instr.res.value, left_reg)
 
-def g_than_instr(instr, asm, offset_map):
-    store_loc = offset_map.lookup(instr.res.value, True)
-    if(instr.left.type == "NUMBER"):
-        asm.append(mov_instr("rax", instr.left.value))
-    else:
-        left_loc = offset_map.lookup(instr.left.value)
-        asm.append(mov_instr("rax", left_loc))
-    if(instr.right.type == "NUMBER"):
-        asm.append(cmp_instr("rax", instr.right.value))
-    else:
-        right_loc = offset_map.lookup(instr.right.value)
-        asm.append(cmp_instr("rax", right_loc))
-    asm.append(set_instr("g", "al"))
-    asm.append(movzx_instr("rax", "al"))
-    asm.append(mov_instr(store_loc, "rax"))
-    return asm
 
-def l_than_instr(instr, asm, offset_map):
-    store_loc = offset_map.lookup(instr.res.value, True)
+def lg_than_instr(instr, asm, l_or_g: str, reg_all: RegAllocator):
+    store_loc = reg_all._alloc_reg()
     if(instr.left.type == "NUMBER"):
-        asm.append(mov_instr("rax", instr.left.value))
+        left_reg = reg_all._alloc_reg()
+        asm.append(mov_instr(left_reg, instr.left.value))
     else:
-        left_loc = offset_map.lookup(instr.left.value)
-        asm.append(mov_instr("rax", left_loc))
+        left_reg = reg_all.get_reg(instr.left.value)
 
     if(instr.right.type == "NUMBER"):
-        asm.append(cmp_instr("rax", instr.right.value))
+        asm.append(cmp_instr(left_reg, instr.right.value))
     else:
-        right_loc = offset_map.lookup(instr.right.value)
-        asm.append(cmp_instr("rax", right_loc))
-    asm.append(set_instr("l", "al"))
-    asm.append(movzx_instr("rax", "al"))
-    asm.append(mov_instr(store_loc, "rax"))
-    return asm
+        right_reg = reg_all.get_reg(instr.right.value)
+        asm.append(cmp_instr(left_reg, right_reg))
+    # Set compare flag
+    asm.append(set_instr(l_or_g, "al"))
+    # Move result into store location register
+    asm.append(movzx_instr(store_loc, "al"))
+    # Assign reister to variable
+    reg_all.assign_reg(instr.res.value, store_loc)
 
-def mod_instr(instr, asm, offset_map):
-    store_loc = offset_map.lookup(instr.res.value, True)
+def mod_instr(instr, asm, reg_all: RegAllocator):
+    store_loc = reg_all.get_reg(instr.res.value)
+
     if(instr.left.type == "NUMBER"):
-        asm.append(mov_instr("rax", instr.left.value))
+        left_reg = reg_all._alloc_reg()
+        asm.append(mov_instr(left_reg, instr.left.value))
     else:
-        left_loc = offset_map.lookup(instr.left.value)
-        asm.append(mov_instr("rax", left_loc))
+        left_reg = reg_all.get_reg(instr.left.value)
+
     if(instr.right.type == "NUMBER"):
-        asm.append(mov_instr("rbx", instr.right.value))
+        right_reg = reg_all._alloc_reg()
+        asm.append(mov_instr(right_reg, instr.right.value))
     else:
-        right_loc = offset_map.lookup(instr.right.value)
-        asm.append(mov_instr("rbx", right_loc))
+        right_reg = reg_all.get_reg(instr.right.value)
 
     asm.append(cqo_instr())
-    asm.append(idiv_instr("rbx"))
-    asm.append(mov_instr(store_loc, "rdx"))
-    return asm
+    asm.append(idiv_instr(right_reg))
+    remain_reg = reg_all._alloc_reg()
+    asm.append(mov_instr(remain_reg, "rdx"))
+    reg_all.assign_reg(instr.res.value, remain_reg)
 
-def decl_instr(instr, asm, offset_map):
-    store_loc = offset_map.lookup(instr.res.value, True)
+
+def decl_instr(instr, asm, reg_all: RegAllocator):
+    store_loc = reg_all._alloc_reg()
+    reg_all.assign_reg(instr.res.value, store_loc)
     if(instr.left.type == "NUMBER"):
-        asm.append(mov_instr("rax", instr.left.value))
+        asm.append(mov_instr(store_loc, instr.left.value))
     else:
-        left_loc = offset_map.lookup(instr.left.value)
-        asm.append(mov_instr("rax", left_loc))
-    asm.append(mov_instr(store_loc, "rax"))
-    return asm
+        left_reg = reg_all.get_reg(instr.left.value)
+        asm.append(mov_instr(store_loc, left_reg))
