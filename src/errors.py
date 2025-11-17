@@ -23,3 +23,8 @@ class TACError(Exception):
         self.message = message
         self.token = token
         super().__init__(self.__str__())
+
+class ASMError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.__str__())

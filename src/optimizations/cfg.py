@@ -21,11 +21,11 @@ def build_cfg(tac: TAC):
     func_list = tac.functions
     node_list = []
     for func_block in func_list:
-        node_list.append(cfg_builder(func_block))
+        node_list.append(_cfg_builder(func_block))
     return node_list
 
 
-def cfg_builder(func):
+def _cfg_builder(func):
     nodes = [CFGNode(block) for block in func.blocks]
     label_to_node = {}
     for node in nodes:
