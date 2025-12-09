@@ -305,6 +305,7 @@ class TAC:
         # initializer
         if stmt.initializer is not None:
             self._decl_stmt(stmt.initializer) # type: ignore
+            self._goto_stmt(label_start.res)
         self._push_to_block(label_start)
         condition = self._get_expression(stmt.condition)
         # check condition
@@ -314,6 +315,7 @@ class TAC:
         self._push_ctrl(label_end.res, label_incr.res)
         self._loop_stmts(for_tok, stmt.body)
         self._pop_ctrl()
+        self._goto_stmt(label_incr.res)
         # increment
         self._push_to_block(label_incr)
         if stmt.increment is not None:

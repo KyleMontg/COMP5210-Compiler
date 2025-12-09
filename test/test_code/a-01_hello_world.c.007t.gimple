@@ -1,0 +1,22 @@
+int main ()
+{
+  int D.2852;
+
+  {
+    int y;
+
+    y = 1;
+    y = y + 1;
+    y = 1;
+    <D.2850>:
+    y = y + 1;
+    if (y <= 1) goto <D.2850>; else goto <D.2848>;
+    <D.2848>:
+    D.2852 = 0;
+    return D.2852;
+  }
+  D.2852 = 0;
+  return D.2852;
+}
+
+

@@ -1,21 +1,29 @@
-"""
-block ?:
-    DECL    res=<identifier token>, left=<initializer token/temp>, right=None, op=None
-    ASSIGN  res=<target>, left=<operand>, right=<operand or None>, op=<operator token>
-    PARAM   res=Token('PARAM','param'), left=<argument value>, right=None, op=None
-    CALL    res=<temp for return>, left=<callee name>, right=None, op=Token('CALL','call')
-    LABEL   res=<label name string>, left=None, right=None, op=Token('LABEL','label')
-    GOTO    res=<target label>, left=None, right=None, op=Token('GOTO','goto')
-    IF      res=<condition temp>, left=<true label>, right=<false label>, op=Token('IFSTMT','if')
-    FOR     res=<condition temp>, left=<body label>, right=<exit label>, op=Token('FORSTMT','for')
-    WHILE   res=<condition temp>, left=<body label>, right=<exit label>, op=Token('WHILESTMT','while')
-    RETURN  res=<value temp/literal>, left=None, right=None, op=Token('RETURN','return')
-"""
-
 from src.tac import *
 from collections import defaultdict
 from src.optimizations.cfg import *
 import copy
+
+# https://www.youtube.com/watch?v=eeXk_ec1n6g
+
+# Do analysis of basic blocks
+# find basic block in and out. 
+
+# check for variables used.
+# if variable not definied in block, add to variable in and variable out of predecessors
+
+
+# Store liveness as such
+# in_dict  { block : [vars]}
+# out_dict { block : [vars]}
+#
+
+# for all blocks, create a dictionary mapping blocks to empty dicts
+# loop through block list backwards until no changes occur:
+    # explore every block once.
+    # for each block, compute in and out sets
+        # live out = union of live in of successors
+        # live in = used U (live out - defined)
+    # if any in or out set changed, continue loop
 
 
 def copy_propagation(tac): # type: ignore
@@ -25,7 +33,7 @@ def copy_propagation(tac): # type: ignore
             continue
         queue = [node_list[0]]
         # default dict to return empty dict if node not in known_map
-        known_map = defaultdict(dict)
+        live_map = defaultdict(dict)
         while queue:
             node = queue.pop(0)
             entry_known = common_keys(node.pred, known_map)

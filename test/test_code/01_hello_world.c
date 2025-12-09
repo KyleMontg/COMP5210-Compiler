@@ -1,19 +1,16 @@
-
-void main() {
-    int x = 1;
-    int y = 2 + x;
-    int a = x;
-    int b = a % y;
-    int c = 3 + 2 + 5 + 9 * 2 / 5;
-    int d = c + x;
-    while(y < 10){
-        y++;
+int main() {
+    int x = 10;
+    int y = 2;
+    int z = 2 + 3;
+    int a = z + z + x;
+    if(x < y){
+        int y = 2;
     }
-    for(int i = 0; i < 10; i++){
-        y += i;
+    for(int i = 0; i < x; i++){
+        x += y;
     }
-    if(y > x ){
-      b = x;
+    if(y == x){
+        return y;
     }
-    return 0;
+    return x;
 }

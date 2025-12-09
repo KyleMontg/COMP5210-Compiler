@@ -44,4 +44,19 @@ def fold_instr(instr):
             instr.left = Token('NUMBER', str(int(int(instr.left.value) % int(instr.right.value))))
             instr.right = None
             instr.op = None
+    elif(instr.op.type == "LESSTHAN"):
+        if(int(instr.left.value) < int(instr.right.value)):
+            instr.left = Token('NUMBER', '1')
+        else:
+            instr.left = Token('NUMBER', '0')
+        instr.right = None
+        instr.op = None
+        
+    elif(instr.op.type == "GREATERTHAN"):
+        if(int(instr.left.value) > int(instr.right.value)):
+            instr.left = Token('NUMBER', '1')
+        else:
+            instr.left = Token('NUMBER', '0')
+        instr.right = None
+        instr.op = None
 

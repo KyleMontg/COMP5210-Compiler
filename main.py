@@ -116,7 +116,7 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: list) -> No
         while(True):
             constant_fold(post_optimized)
             copy_propagation(post_optimized)
-            #dead_code_elimination(post_optimized)
+            dead_code_elimination(post_optimized)
             #print("\nPre OP")
             #print(pretty_tac(pre_optimized))
             #print("\nPost OP")
@@ -140,17 +140,17 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: list) -> No
         print(f'Three Address Code with Constant Folding: \n\n')
         print(pretty_tac(post_optimized))
         print('\n\n')
-
+    '''
     try:
         asm = tac_to_asm(post_optimized)
     except ASMError as err:
         print(f'Error in Generating ASM: {err}')
         sys.exit(1)
-
+    
     if print_outputs[5]:
         for line in asm:
             print(line)
-
+    
     try:
         with open(output_path, 'w') as file:
             for line in asm:
@@ -158,7 +158,7 @@ def run_compiler(input_path: Path, output_path: Path, print_outputs: list) -> No
     except OSError as err:
         print(err)
         sys.exit(1)
-
+    '''
 
 if __name__ == '__main__':
     parser = create_arguments()

@@ -119,6 +119,8 @@ def pretty_tac(instructions) -> str:
                 return repr(x.value)
             if x.type == 'STRING_LITERAL':
                 return repr(x.value)
+            if x.type == 'BOOL':
+                return repr(x.value)
             return f"{x.type}({repr(x.value)})"
         return str(x)
 

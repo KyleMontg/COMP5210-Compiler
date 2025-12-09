@@ -112,7 +112,7 @@ class RegAllocator:
 
 
 
-def tac_to_asm(tac:TAC, num_regs = 12):
+def tac_to_asm(tac:TAC, num_regs = 3):
     '''
     Reads Three Address Code and Produces Assembly X64
     '''
