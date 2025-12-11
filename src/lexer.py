@@ -1,8 +1,18 @@
 import re
 from src.errors import LexerError
-from src.tokens import *
+from src.tokens import (
+    Token,
+    SYMBOLS,
+    STRING_LITERAL,
+    CHAR_LITERAL,
+    NUMBER,
+    KEYWORDS,
+    IDENTIFIER,
+    EOF
+)
 
-_SYMBOL_PATTERN = "|".join(re.escape(sym) for sym in sorted(SYMBOLS.keys(), key=len, reverse=True))
+_SYMBOL_PATTERN = "|".join(re.escape(sym)
+                           for sym in sorted(SYMBOLS.keys(), key=len, reverse=True))
 
 _NUMBER_PATTERN = r"""
     (?:0[xX][0-9A-Fa-f]+(?:\.[0-9A-Fa-f]*)?(?:[pP][+-]?\d+)?)
@@ -27,7 +37,7 @@ _TOKEN_REGEX = re.compile(
 
 
 class Tokenizer:
-    """Regex based tokenizer for the C subset."""
+    """Regex based tokenizer for a subset of C"""
 
     def __init__(self, src: str):
         self.src = src
@@ -73,16 +83,19 @@ class Tokenizer:
                 continue
 
             if tok_typ == "STRING":
-                tokens.append(Token(STRING_LITERAL, lexeme[1:-1], start_line, start_col))
+                tokens.append(
+                    Token(STRING_LITERAL, lexeme[1:-1], start_line, start_col))
             elif tok_typ == "CHAR":
-                tokens.append(Token(CHAR_LITERAL, lexeme[1:-1], start_line, start_col))
+                tokens.append(
+                    Token(CHAR_LITERAL, lexeme[1:-1], start_line, start_col))
             elif tok_typ == "NUMBER":
                 tokens.append(Token(NUMBER, lexeme, start_line, start_col))
             elif tok_typ == "IDENTIFIER":
                 token_type = KEYWORDS.get(lexeme, IDENTIFIER)
                 tokens.append(Token(token_type, lexeme, start_line, start_col))
             elif tok_typ == "SYMBOL":
-                tokens.append(Token(SYMBOLS[lexeme], lexeme, start_line, start_col))
+                tokens.append(
+                    Token(SYMBOLS[lexeme], lexeme, start_line, start_col))
             elif tok_typ == "MISMATCH":
                 raise LexerError(
                     f"unexpected token '{lexeme}'",

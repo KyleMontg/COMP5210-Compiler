@@ -1,7 +1,46 @@
 ﻿from typing import List, Optional, Sequence
 from src.errors import ParserError
-from src.tokens import *
-from src.ast_nodes import *
+from src.tokens import (
+    Token,
+    DECLARATION_SPECIFIERS,
+    TYPE_SPECIFIERS,
+    TOKEN_PREC,
+    PREFIX_OPERATORS,
+    POSTFIX_OPERATORS,
+    ASSIGNMENT_TOKENS
+)
+from src.ast_nodes import (
+    Program,
+    DeclarationStatement,
+    DeclarationTypes,
+    VarDeclaration,
+    FunctionDeclaration,
+    FunctionDefinition,
+    ParameterDeclaration,
+    CompoundStatement,
+    IfStatement,
+    WhileStatement,
+    DoWhileStatement,
+    ForStatement,
+    SwitchSection,
+    SwitchStatement,
+    DefaultLabel,
+    CallExpression,
+    MemberExpression,
+    PostfixExpression,
+    PrefixExpression,
+    Literal,
+    Identifier,
+    CaseLabel,
+    ExpressionStatement,
+    ContinueStatement,
+    BreakStatement,
+    GotoStatement,
+    AssignmentExpression,
+    BinaryExpression,
+    LabelStatement,
+    ReturnStatement
+)
 
 
 # None returns used to propegate dead ends
@@ -10,11 +49,13 @@ from src.ast_nodes import *
 
 class Parser:
     '''Takes in a list of lexime tokens and returns a list of ast nodes'''
+
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.pos = 0
         self.last_error: Optional[Token] = None
 # Helper functions
+
     def _cur(self) -> Token:
         if self.pos >= len(self.tokens):
             return self.tokens[-1]
@@ -54,6 +95,7 @@ class Parser:
         while self._cur().type != 'EOF':
             unit = self._translation_unit()
             if unit is None:
+                error_token = self.last_error if self.last_error else self._cur()
                 raise ParserError(
                     f'There was an error parsing token {self.last_error} at pos {self.pos} cur {self._cur()}',
                     self.last_error
@@ -73,13 +115,13 @@ class Parser:
             return decl
         return None
 
-    # <DeclarationStatement> ::= <DeclarationType> <VarDeclarationList> ";"
+    # <DeclarationStatement> ::= <DeclarationTypes> <VarDeclarationList> ";"
     def _declaration_statement(self):
         decl_type = self._declaration_types()
-        if(decl_type is None):
+        if (decl_type is None):
             return None
         decl_list = self._var_declaration_list()
-        if(decl_list is None):
+        if (decl_list is None):
             return None
         if (self._expect('SEMICOLON') is None):
             return None
@@ -92,7 +134,7 @@ class Parser:
             specifier = self._expect(list(DECLARATION_SPECIFIERS))
             specifier_list.append(specifier)
         decl_type = self._expect(list(TYPE_SPECIFIERS))
-        if(decl_type is None):
+        if (decl_type is None):
             return None
         return DeclarationTypes(specifier_list, decl_type)
 
@@ -100,13 +142,13 @@ class Parser:
     def _var_declaration_list(self):
         delc_list: List[VarDeclaration] = []
         var_decl = self._var_declaration()
-        if(var_decl is None):
+        if (var_decl is None):
             return None
         delc_list.append(var_decl)
         while self._match('COMMA'):
             self._expect('COMMA')
             var_decl = self._var_declaration()
-            if(var_decl is None):
+            if (var_decl is None):
                 return None
             delc_list.append(var_decl)
         return delc_list
@@ -114,13 +156,13 @@ class Parser:
     # <VarDeclaration> ::= IDENTIFIER ( "=" <Expression> )?
     def _var_declaration(self):
         decl = self._declarator()
-        if(decl is None):
+        if (decl is None):
             return None
         init = None
         if self._match('ASSIGN'):
             self._expect('ASSIGN')
-            expr = self._expression()
-            if(expr is None):
+            expr = self._expression(TOKEN_PREC['COMMA'] + 1)
+            if (expr is None):
                 return None
             init = expr
         return VarDeclaration(decl, init)
@@ -128,24 +170,25 @@ class Parser:
     # <Function> ::= <FunctionDefinition> | <FunctionDeclaration>
     def _function(self):
         init = self._function_init()
-        if(init is None):
-          return None
+        if (init is None):
+            return None
         decl_type, identifier, parameters = init
-        if(self._match('SEMICOLON')):
+        if (self._match('SEMICOLON')):
             self._expect('SEMICOLON')
             return FunctionDeclaration(decl_type, identifier, parameters)
         statements = self._compound_statement()
-        if(statements is None):
+        if (statements is None):
             return None
+
         return FunctionDefinition(decl_type, identifier, parameters, statements)
 
     # <FunctionInit> ::= <DeclarationTypes> <FunctionDeclarator>
     def _function_init(self):
         decl_type = self._declaration_types()
-        if(decl_type is None):
+        if (decl_type is None):
             return None
         func_decl = self._function_declarator()
-        if(func_decl is None):
+        if (func_decl is None):
             return None
         identifier, parameters = func_decl
         return (decl_type, identifier, parameters)
@@ -154,28 +197,28 @@ class Parser:
     def _function_declarator(self):
         parameters = []
         identifier = self._expect('IDENTIFIER')
-        if(identifier is None):
+        if (identifier is None):
             return None
         if (self._expect('LPAREN') is None):
             return None
         if not self._match('RPAREN'):
             parameters = self._function_param_list()
-            if(parameters is None):
+            if (parameters is None):
                 return None
         self._expect('RPAREN')
         return (identifier, parameters)
 
     # <FunctionParamList> ::= <ParamDeclaration> ("," <ParamDeclaration> )*
     def _function_param_list(self):
-        param_list= []
+        param_list = []
         param_decl = self._param_declaration()
-        if(param_decl is None):
+        if (param_decl is None):
             return None
         param_list.append(param_decl)
-        while(self._match('COMMA')):
+        while (self._match('COMMA')):
             self._expect('COMMA')
             param_decl = self._param_declaration()
-            if(param_decl is None):
+            if (param_decl is None):
                 return None
             param_list.append(param_decl)
         return param_list
@@ -183,7 +226,7 @@ class Parser:
     # <ParamDeclaration> ::= <DeclarationTypes> IDENTIFIER?
     def _param_declaration(self):
         decl_types = self._declaration_types()
-        if(decl_types is None):
+        if (decl_types is None):
             return None
         decl = None
         if self._match('IDENTIFIER'):
@@ -193,7 +236,7 @@ class Parser:
     # IDENTIFIER
     def _declarator(self):
         identifier = self._expect('IDENTIFIER')
-        if(identifier is None):
+        if (identifier is None):
             return None
         return identifier
 
@@ -264,13 +307,13 @@ class Parser:
             return None
         if self._expect('RPAREN') is None:
             return None
-        then_branch = self._compound_statement()
+        then_branch = self._statement()
         if then_branch is None:
             return None
         else_branch = None
         if self._match('ELSE'):
             self._expect('ELSE')
-            else_branch = self._compound_statement()
+            else_branch = self._statement()
             if else_branch is None:
                 return None
         return IfStatement(condition, then_branch, else_branch)
@@ -286,7 +329,7 @@ class Parser:
             return None
         if self._expect('RPAREN') is None:
             return None
-        body = self._compound_statement()
+        body = self._statement()
         if body is None:
             return None
         return WhileStatement(condition, body)
@@ -295,7 +338,7 @@ class Parser:
     def _do_while_statement(self):
         if self._expect('DO') is None:
             return None
-        body = self._compound_statement()
+        body = self._statement()
         if body is None:
             return None
         if self._expect('WHILE') is None:
@@ -319,9 +362,16 @@ class Parser:
             return None
         initializer = None
         if self._cur().type != 'SEMICOLON':
+            start_pos = self.pos
             initializer = self._declaration_statement()
             if initializer is None:
-                return None
+                self.pos = start_pos
+                expr = self._expression()
+                if expr is None:
+                    return None
+                if self._expect('SEMICOLON') is None:
+                    return None
+                initializer = ExpressionStatement(expr)
         else:
             if self._expect('SEMICOLON') is None:
                 return None
@@ -339,7 +389,7 @@ class Parser:
                 return None
         if self._expect('RPAREN') is None:
             return None
-        body = self._compound_statement()
+        body = self._statement()
         if body is None:
             return None
         return ForStatement(initializer, condition, increment, body)
@@ -432,7 +482,7 @@ class Parser:
 
     # <ReturnStatement> ::= "return" <Expression>? ";"
     def _return_statement(self):
-        if(self._expect('RETURN') is None):
+        if (self._expect('RETURN') is None):
             return None
         expression = None
         if not self._match('SEMICOLON'):
@@ -447,7 +497,7 @@ class Parser:
         if self._expect('GOTO') is None:
             return None
         identifier = self._expect('IDENTIFIER')
-        if(identifier is None):
+        if (identifier is None):
             return None
         if self._expect('SEMICOLON') is None:
             return None
@@ -472,7 +522,7 @@ class Parser:
     # <LabelStatement> ::= IDENTIFIER ":" <Statements>
     def _label_statement(self):
         identifier = self._expect('IDENTIFIER')
-        if(identifier is None):
+        if (identifier is None):
             return None
         if self._expect('COLON') is None:
             return None
@@ -525,7 +575,9 @@ class Parser:
     def _parse_prefix(self):
         if self._match(*PREFIX_OPERATORS):
             prefix = self._expect(list(PREFIX_OPERATORS))
-            operand = self._expression(TOKEN_PREC.get('PREFIX'))
+            prefix_int = TOKEN_PREC.get('PREFIX')
+            assert (isinstance(prefix_int, int))
+            operand = self._expression(prefix_int)
             return PrefixExpression(prefix, operand)
         # If no prefix
         primary = self._parse_primary()
@@ -538,7 +590,7 @@ class Parser:
         if self._match('LPAREN'):
             self._expect('LPAREN')
             expr = self._expression()
-            if(expr is None):
+            if (expr is None):
                 return None
             self._expect('RPAREN')
             return expr
@@ -557,7 +609,7 @@ class Parser:
         # Function Calls
         if self._match('LPAREN'):
             func_call = self._function_call(node)
-            if(func_call is None):
+            if (func_call is None):
                 return None
             return func_call
         # Member Expressions
@@ -575,25 +627,21 @@ class Parser:
 
     # builds argument list for function calls
     def _function_call(self, node):
-            self._advance()
-            args = []
-            if self._match('RPAREN'):
-                if (self._expect('RPAREN') is None):
-                    return None
-                return CallExpression(node, args)
-            expr = self._expression()
-            if expr is None:
-                return None
-            args.append(expr)
-            while self._match('COMMA'):
-                self._expect('COMMA')
-                if self._match('RPAREN'):
-                    break
-                args.append(self._expression())
-            if self._expect('RPAREN') is None:
+        self._advance()
+        args = []
+        if self._match('RPAREN'):
+            if (self._expect('RPAREN') is None):
                 return None
             return CallExpression(node, args)
-
-
-
-
+        expr = self._expression(TOKEN_PREC['COMMA'] + 1)
+        if expr is None:
+            return None
+        args.append(expr)
+        while self._match('COMMA'):
+            self._expect('COMMA')
+            if self._match('RPAREN'):
+                break
+            args.append(self._expression(TOKEN_PREC['COMMA'] + 1))
+        if self._expect('RPAREN') is None:
+            return None
+        return CallExpression(node, args)

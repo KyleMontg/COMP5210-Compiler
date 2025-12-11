@@ -15,7 +15,7 @@ class FunctionDefinition:
     func_type: Any
     func_ident: Any
     func_param: List[Any] = field(default_factory=list)
-    func_body: List[Any] = field(default_factory=list)
+    func_body: Any = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -90,7 +90,6 @@ class ForStatement:
 class SwitchStatement:
     expression: Any
     body: Any
-
 
 
 @dataclass(slots=True)
@@ -176,7 +175,6 @@ class MemberExpression:
     property: Any
 
 
-
 @dataclass(slots=True)
 class PostfixExpression:
     postfix: Any
@@ -191,4 +189,3 @@ class Identifier:
 @dataclass(slots=True)
 class Literal:
     token: Any
-

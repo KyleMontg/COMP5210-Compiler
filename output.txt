@@ -1,16 +1,50 @@
-(INT,'int', Line: 1 Char: 0)
-(IDENTIFIER,'main', Line: 1 Char: 4)
-(LPAREN,'(', Line: 1 Char: 8)
-(VOID,'void', Line: 1 Char: 9)
-(RPAREN,')', Line: 1 Char: 13)
-(LBRACE,'{', Line: 1 Char: 15)
-(IDENTIFIER,'printf', Line: 2 Char: 4)
-(LPAREN,'(', Line: 2 Char: 10)
-(STRING_LITERAL,'Hello, world!', Line: 2 Char: 11)
-(RPAREN,')', Line: 2 Char: 26)
-(SEMICOLON,';', Line: 2 Char: 27)
-(RETURN,'return', Line: 3 Char: 4)
-(NUMBER,'0', Line: 3 Char: 11)
-(SEMICOLON,';', Line: 3 Char: 12)
-(RBRACE,'}', Line: 4 Char: 0)
-(EOF,'', Line: 5 Char: 0)
+main:
+	push rbp
+	mov  rbp, rsp
+	sub rsp, 16
+	push r12
+	push r13
+	push r14
+	push r15
+
+	; Allocate registers for Parameters
+
+	; x = 10
+	mov r10, 10
+	; y = 25
+	mov r11, 25
+	; i = 0
+	mov r11, 0
+	jmp .%L0
+.%L0:
+	; %t0 = i< 20
+	mov r12, r11
+	cmp r12, 20
+	setl al
+	movzx r12, al
+	; if r12 goto .%L1 else .%L3
+	cmp r12, 1
+	je .%L1
+	jmp .%L3
+.%L1:
+	; x = x++ 1
+	mov r10, r10
+	inc r10
+	jmp .%L2
+.%L2:
+	; i = i++ 1
+	mov r11, r11
+	inc r11
+	jmp .%L0
+.%L3:
+	; return r10
+	mov rax, r10
+.%L4:
+
+	pop r15
+	pop r14
+	pop r13
+	pop r12
+	add rsp, 16
+	pop rbp
+	ret

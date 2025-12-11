@@ -1,42 +1,48 @@
 # **COMP5210-Compiler**
 A compiler for a subsection of the C99 programming language by Kyle Montgomery.
-Currently implemented parts: Lexer, Parser, Symbol Table
+
 
 ># Table of Contents
 >[Requirements](#requirements)
 >[Usage](#Usage)
->[Implementation](#implementation-overview)
+>[Language Specification](#language-specifications)
+>[Optimization](#optimizations)
 >[Lexical Tokens](#Tokens)
 >[Grammer Rules](#Grammer)
+>[Compiler Stages](#Compiler-Stages)
 >[Sources](#sources)
 
 
 ## Requirements
->* Python 3.12 or later
->* For testing use test_runner.py
+##### Python 3.12 or later
 
 ***
 
 ## Usage
 ##### Run code
->`python main.py "input_file"`
+>`python main.py input.c -o1 -asm`
 **flags**
 > `-l` Contents of lexer will be printed to console
 > `-a` Contents of Parser will be printed to console
 > `-t` Contents of Symbol Table will be printed to console
-> `-o "file_location/file_name"` When flagged, output file name and directory can be specified, defaults to output.txt in main directory
+> `-w "file_location/file_name"` When flagged, output file name and directory can be specified, defaults to output.txt in main directory
+> `-o0` Create the Three Address Code with no optimizations and print to terminal
+> `-o1` Create the Three Address Code with all optimizations and print to terminal
+> `-asm` Generates X86 Assembly for 64-bit Windows
 ##### Run Tests
->`test_runner.py`
+>`python test_runner.py --all`
 **flags**
 > `-l` Test Lexer
-> `-a` Test Parser
-> `-t` Test Symbol Table
-> * All tests ran and outcome of tests will be printed to the console
+> `-p` Test Parser
+> `-s` Test Semantic Analysis
+> `-t` Test Three Address Code
+> `-o` Test Optimizations
+> `-a` Test All
 
 
+# Language Specifications
 ***
 
-## Implementation Overview
 
 ### Lexical Specification
 > * White space is skipped over
@@ -91,23 +97,8 @@ The tokens I chose to implement were a subsection of the C99 ISO Standard found 
 
 | Symbol    | Token Name |
 | --------- | ---------- |
-| `float`   | FLOAT      |
 | `int`     | INT        |
-|`short`    | SHORT      |
-|`long`     | LONG       |
-|`double`   | DOUBLE     |
-|`char`     | CHAR       |
 |`void`     | VOID       |
-|`_Bool`    | _BOOL      |
-
-### Declaration Specifier
-
-| Symbol     | Token Name |
-| ---------- | ---------- |
-|`const`     | CONST      |
-|`static`    | STATIC     |
-|`unsigned`  | UNSIGNED   |
-|`signed`    | SIGNED     |
 
 ### Statement Keyword
 | Symbol      | Token Name |
@@ -195,8 +186,6 @@ The tokens I chose to implement were a subsection of the C99 ISO Standard found 
 | -------------- | ------------------------ |
 | IDENTIFIER     | User-defined identifiers |
 | NUMBER         | Numeric literals         |
-| CHAR_LITERAL   | Character literals       |
-| STRING_LITERAL | String Literals          |
 | EOF            | End-of-file marker       |
 
 # Grammer
@@ -273,9 +262,46 @@ The tokens I chose to implement were a subsection of the C99 ISO Standard found 
 `<ArgumentExpressionList> ::= <Expression> ("," <Expression> )*`
 `<PrimaryExpression> ::= IDENTIFIER | NUMBER | STRING_LITERAL | "(" <Expression> ")"`
 
+# Compiler Stages
+***
+### 1. Lexer (`lexer.py`)
+* Tokenizes source code
+### 2. Parser (`parser.py`)
+* Recurive decent parser / Pratt parsing for expressions
+* Builds Abstract Syntax Tree
+### 3. Symbol Table (`symbol_table.py`)
+* Tracks variable declarations and scopes
+### 4. Semantic Analysis (`semantic_analysis.py`)
+* Type Checking
+* Undefined / uninitialized variable tracking
+### 5. TAC Generation (`tac.py`)
+* Generates a Three Address Code representation
+### 6. Optimizations
+* Constant Folding(`constant_fold.py`)
+* Copy Propagation(`copy_and_constant_propagation.py`)
+* Constant Propagation(`copy_and_constant_propagation.py`)
+* Dead Code Elimination(`dead_code_elimination.py`)
+### 7. Register Allocation(`register_optimization.py`)
+* Block Liveness Analysis
+* Line Liveness Analysis
+* Interference graph construction
+* Greedy graph coloring register allocation
+### 8. Assembly Generation(`asm.py`)
+* Windows X86-64 calling convention
+* Register allocation mapping
+
+***
 
 # Sources
-* https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html - helped understand Pratt parsing
-* https://github.com/ShivamSarodia/ShivyC/ - used for help formatting README
-* https://www.dii.uchile.cl/~daespino/files/Iso_C_1999_definition.pdf - used for what tokens to implement
-
+#### Prat Parsing
+* https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
+#### Format READMEs
+* https://github.com/ShivamSarodia/ShivyC/
+#### C Standard Specification
+* https://www.dii.uchile.cl/~daespino/files/Iso_C_1999_definition.pdf
+#### Liveness Analysis / Interference Graphs
+* https://www.youtube.com/watch?v=eeXk_ec1n6g
+#### Greedy Graph Coloring
+* https://www.geeksforgeeks.org/dsa/graph-coloring-set-2-greedy-algorithm/
+#### control Flow Graph
+* https://www.geeksforgeeks.org/software-engineering/software-engineering-control-flow-graph-cfg/
