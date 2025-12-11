@@ -11,3 +11,4 @@ from .optimizations.copy_propagation import *
 from .optimizations.dead_code_elimination import *
 from .optimizations.cfg import *
 from .optimizations.asm import *
+from .optimizations.register_optimization import *

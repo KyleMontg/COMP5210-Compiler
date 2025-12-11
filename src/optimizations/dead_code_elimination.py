@@ -1,6 +1,6 @@
 from src.optimizations.cfg import build_cfg
 from src.tokens import Token
-from src.tac import TAC
+from src.tac import TAC, BasicBlock
 
 """
 block ?:
@@ -63,7 +63,7 @@ def dead_code_elimination(tac: TAC):
     return tac
 
 
-def get_variables(block, var_tracker: dict, label_redirects: dict):
+def get_variables(block: BasicBlock, var_tracker: dict, label_redirects: dict):
     # prechek if label followed by goto
     goto_redirect(block, label_redirects)
     for instr in block.instr_list:
@@ -73,12 +73,12 @@ def get_variables(block, var_tracker: dict, label_redirects: dict):
             if(res is None):
                 var_tracker[instr.res.value] = 0
             # If left is identifier, mark as used
-            if(isinstance(instr.left, Token) and instr.left.type == 'IDENTIFIER'):
+            if(is_ident(instr.left)):
                 left_val = var_tracker.get(instr.left.value)
                 if(left_val is not None):
                     var_tracker[instr.left.value] = 1
             # If right is identifier, mark as used
-            if(isinstance(instr.right, Token) and instr.right.type == 'IDENTIFIER'):
+            if(is_ident(instr)):
                 right_val = var_tracker.get(instr.right.value)
                 if(right_val is not None):
                     var_tracker[instr.right.value] = 1
@@ -104,21 +104,25 @@ def get_variables(block, var_tracker: dict, label_redirects: dict):
                     
         if(instr.instr_type in ('IF', 'FOR', 'WHILE')):
             # If condition is identifier, mark identifier as used
-            if(isinstance(instr.res, Token) and instr.res.type == 'IDENTIFIER'):
+            if(is_ident(instr.res)):
                 cond_val = var_tracker.get(instr.res.value)
                 if(cond_val is not None):
                     var_tracker[instr.res.value] = 1
                     
         if(instr.instr_type == 'RETURN'):
             # If return value is identifier, mark identifier as used
-            if(isinstance(instr.res, Token) and instr.res.type == 'IDENTIFIER'):
+            if(is_ident(instr.res)):
                 ret_val = var_tracker.get(instr.res.value)
                 if(ret_val is not None):
                     var_tracker[instr.res.value] = 1
                 
     return var_tracker, label_redirects
     
-    
+def is_ident(instr: Token | str | None):
+    if(instr is None):
+        return False
+    return isinstance(instr, Token) and instr.type == 'IDENTIFIER'
+
 def goto_redirect(block, label_redirects: dict):
     '''
     check if a label is immediately followed by a goto

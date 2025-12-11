@@ -1,36 +1,23 @@
-"""
-block ?:
-    DECL    res=<identifier token>, left=<initializer token/temp>, right=None, op=None
-    ASSIGN  res=<target>, left=<operand>, right=<operand or None>, op=<operator token>
-    PARAM   res=Token('PARAM','param'), left=<argument value>, right=None, op=None
-    CALL    res=<temp for return>, left=<callee name>, right=None, op=Token('CALL','call')
-    LABEL   res=<label name string>, left=None, right=None, op=Token('LABEL','label')
-    GOTO    res=<target label>, left=None, right=None, op=Token('GOTO','goto')
-    IF      res=<condition temp>, left=<true label>, right=<false label>, op=Token('IFSTMT','if')
-    FOR     res=<condition temp>, left=<body label>, right=<exit label>, op=Token('FORSTMT','for')
-    WHILE   res=<condition temp>, left=<body label>, right=<exit label>, op=Token('WHILESTMT','while')
-    RETURN  res=<value temp/literal>, left=None, right=None, op=Token('RETURN','return')
-"""
-
-from src.tac import *
-from collections import defaultdict
-from src.optimizations.cfg import *
+from src.tokens import Token
+from src.tac import TAC, BasicBlock
+from src.optimizations.cfg import CFGNode, build_cfg
 import copy
 
 
-def copy_propagation(tac): # type: ignore
+def copy_propagation(tac:TAC):
     cfg = build_cfg(tac)
     for node_list in cfg:
         if(len(node_list) == 0):
             continue
         queue = [node_list[0]]
         # default dict to return empty dict if node not in known_map
-        known_map = defaultdict(dict)
+        known_map = dict()
         while queue:
             node = queue.pop(0)
             entry_known = common_keys(node.pred, known_map)
             exit_known = _scan_block(node.block, copy.deepcopy(entry_known))
-            changed = known_map[node] != exit_known
+            prev_known = known_map.get(node)
+            changed = (prev_known is None) or (known_map[node] != exit_known)
             known_map[node] = exit_known
             if(changed):
                 queue.extend(node.succ)
@@ -39,35 +26,35 @@ def copy_propagation(tac): # type: ignore
             propagate_known(node.block, entry)
 
 def common_keys(nodes: list[CFGNode], known_map):
-        if(not nodes):
-            return {}
-        # List of pred known dicts
-        known_list = [known_map.get(i, {}) for i in nodes]
-        # List for all agreed var values from pred on entry
-        merged = copy.deepcopy(known_list[0])
-        for dict_item in known_list[1:]:
-            for key in list(merged.keys()):
-                if key not in dict_item or merged[key] != dict_item[key]:
-                    del merged[key]
+    merged = None
+    for pred in nodes:
+        pred_known = known_map.get(pred)
+        if pred_known is None:
+            continue
+        if merged is None:
+            merged = copy.deepcopy(pred_known)
+            continue
+        for k in list(merged.keys()):
+            if k not in pred_known or merged[k] != pred_known[k]:
+                del merged[k]
+    return merged if merged is not None else {}
 
-        return merged
-
-def _scan_block(block, entry):
-    known = copy.copy(entry)
+def _scan_block(block: BasicBlock, entry: dict[str, Token]):
+    known:dict[str, Token] = copy.copy(entry)
     for instr in block.instr_list:
         if(instr.instr_type in ('DECL', 'ASSIGN')):
-            known.pop(instr.res.value, None)
+            known.pop(instr.res.value, None) # type: ignore
             if(instr.left is None):
                 continue
-            if(instr.right is None and instr.left.type == 'NUMBER'):
-                known[instr.res.value] = instr.left
-            elif(instr.right is None and instr.left.type == 'IDENTIFIER'):
-                if(instr.res.value == instr.left.value):
+            if(instr.right is None and instr.left.type == 'NUMBER'): # type: ignore
+                known[instr.res.value] = instr.left # type: ignore
+            elif(instr.right is None and instr.left.type == 'IDENTIFIER'): # type: ignore
+                if(instr.res.value == instr.left.value): # type: ignore
                     continue
-                known[instr.res.value] = known.get(instr.left.value, instr.left)
+                known[instr.res.value] = known.get(instr.left.value, instr.left) # type: ignore
     return known
 
-def propagate_known(block, entry):
+def propagate_known(block: BasicBlock, entry) -> None:
     known = dict(entry)
     for instr in block.instr_list:
         if(isinstance(instr.left, Token) and instr.left.type == 'IDENTIFIER'):
@@ -85,12 +72,12 @@ def propagate_known(block, entry):
                 if known_tok is not None:
                     instr.res = copy.deepcopy(known_tok)
         if instr.instr_type in ('DECL', 'ASSIGN'):
-            res_name = instr.res.value
+            res_name = instr.res.value # type: ignore
             known.pop(res_name, None)
             if instr.left is None:
                 continue
             if instr.op is None and instr.right is None:
-                if instr.left.type == 'NUMBER':
+                if instr.left.type == 'NUMBER': # type: ignore
                     known[res_name] = instr.left
-                elif instr.left.type == 'IDENTIFIER' and instr.left.value != res_name:
-                    known[res_name] = known.get(instr.left.value, instr.left)
+                elif instr.left.type == 'IDENTIFIER' and instr.left.value != res_name: # type: ignore
+                    known[res_name] = known.get(instr.left.value, instr.left) # type: ignore

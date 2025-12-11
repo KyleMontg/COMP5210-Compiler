@@ -2,7 +2,7 @@ from src.tac import *
 
 # https://www.geeksforgeeks.org/software-engineering/software-engineering-control-flow-graph-cfg/
 class CFGNode:
-    def __init__(self, block):
+    def __init__(self, block: BasicBlock):
         self.block = block
         self.succ = []
         self.pred = []
@@ -11,13 +11,14 @@ class CFGNode:
             self.label = None
         self.last_instr = block.instr_list[-1] if block.instr_list else None
 
-    def add_succ(self, other):
+
+    def add_succ(self, other: 'CFGNode'):
         if other not in self.succ:
             self.succ.append(other)
             other.pred.append(self)
 
 
-def build_cfg(tac: TAC):
+def build_cfg(tac: TAC) -> list[list[CFGNode]]:
     func_list = tac.functions
     node_list = []
     for func_block in func_list:
@@ -25,7 +26,7 @@ def build_cfg(tac: TAC):
     return node_list
 
 
-def _cfg_builder(func):
+def _cfg_builder(func: FunctionBlock) -> list[CFGNode]:
     nodes = [CFGNode(block) for block in func.blocks]
     label_to_node = {}
     for node in nodes:

@@ -1,5 +1,7 @@
-#Instruction Types: ASSIGN, PARAM, CALL, LABEL, IF, FOR, WHILE, DECL, RETURN, GOTO
-from src.tac import *
+from src.tac import TAC
+from src.tokens import Token
+
+
 def constant_fold(tac: TAC):
     func_list = tac.functions
     for func_block in func_list:
@@ -51,7 +53,6 @@ def fold_instr(instr):
             instr.left = Token('NUMBER', '0')
         instr.right = None
         instr.op = None
-        
     elif(instr.op.type == "GREATERTHAN"):
         if(int(instr.left.value) > int(instr.right.value)):
             instr.left = Token('NUMBER', '1')
@@ -59,4 +60,10 @@ def fold_instr(instr):
             instr.left = Token('NUMBER', '0')
         instr.right = None
         instr.op = None
-
+    elif(instr.op.type == 'EQUAL'):
+        if(int(instr.left.value) == int(instr.right.value)):
+            instr.left = Token('NUMBER', '1')
+        else:
+            instr.left = Token('NUMBER', '0')
+        instr.right = None
+        instr.op = None

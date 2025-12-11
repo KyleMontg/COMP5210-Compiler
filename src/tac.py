@@ -1,7 +1,32 @@
-from src.ast_nodes import *
-from src.tokens import *
+from src.ast_nodes import (
+    Program,
+    FunctionDefinition,
+    DeclarationStatement,
+    ExpressionStatement,
+    BreakStatement,
+    ContinueStatement,
+    ReturnStatement,
+    LabelStatement,
+    GotoStatement,
+    SwitchStatement,
+    ForStatement,
+    WhileStatement,
+    DoWhileStatement,
+    IfStatement,
+    VarDeclaration,
+    AssignmentExpression,
+    BinaryExpression,
+    PostfixExpression,
+    PrefixExpression,
+    CallExpression,
+    Literal,
+    MemberExpression,
+    Identifier,
+    )
+from typing import Any
+from src.tokens import Token, IDENTIFIER, NUMBER
 from src.errors import *
-
+from src.symbol_table import SymbolTable
 '''
 Instruction has general format of:
     res = left op right
@@ -9,7 +34,11 @@ For loop statements, labels, and gotos Instruction is used differently
 '''
 #Instruction Types: ASSIGN, PARAM, CALL, LABEL, IF, FOR, WHILE, RETURN, DECL
 class Instruction:
-    def __init__(self, instr_type: str, res, left, right = None, op = None):
+    def __init__(self, instr_type: Token | str,
+                 res: Token | str,
+                 left: Token | str |  None,
+                 right: Token | str |  None = None,
+                 op: Token | None = None):
         # Formated such that res = left op right
         self.op = op
         self.left = left
@@ -21,11 +50,13 @@ class Instruction:
 # Control flow blocks
 class BasicBlock:
     def __init__(self):
-        self.instr_list = []
+        self.instr_list: list[Instruction] = []
 
 
 class FunctionBlock:
-    def __init__(self, name: str, blocks: list, symbol_table):
+    def __init__(self, name: str,
+                 blocks: list[BasicBlock],
+                 symbol_table: SymbolTable):
         self.name = name
         self.blocks = blocks
         self.symbol_table = symbol_table
@@ -33,17 +64,17 @@ class FunctionBlock:
 
 class TAC:
     def __init__(self):
-        self.symbol_table = None
-        self.temp_var_count = 0
-        self.label_count = 0
-        self.functions = []
-        self.cur_func = None
-        self.cur_block = None
+        self.symbol_table: SymbolTable | None = None
+        self.temp_var_count: int = 0
+        self.label_count: int = 0
+        self.functions: list[FunctionBlock] = []
+        self.cur_func: FunctionBlock | None = None
+        self.cur_block: BasicBlock | None = None
         # Control-flow stack to track break/continue
-        self.ctrl_stack = []
-        self.globals = []
+        self.ctrl_stack: list[dict[str, str]] = []
+        self.globals: list[Instruction] = []
 
-    def _push_to_block(self, instr: Instruction):
+    def _push_to_block(self, instr: Instruction) -> None:
         # if global
         if(self.cur_func == None):
 
@@ -56,18 +87,21 @@ class TAC:
                 self.cur_block = new_block
             self.cur_block.instr_list.append(instr)  # type: ignore
 
-    def _get_temp_var(self):
+    def _get_temp_var(self) -> Token:
         temp_name = f'%t{self.temp_var_count}'
         self.temp_var_count += 1
         tok = Token(IDENTIFIER, temp_name)
         return tok
 
-    def _get_label(self):
+    def _get_label(self) -> str:
         label_name = f"%L{self.label_count}"
         self.label_count += 1
         return label_name
 
-    def _push_ctrl(self, break_label: str, continue_label = None):
+    def _push_ctrl(self,
+                   break_label: str,
+                   continue_label: str | None = None
+                   ) -> None:
         if(continue_label is not None):
             self.ctrl_stack.append({'break': break_label, 'continue': continue_label})
         else:
@@ -77,12 +111,12 @@ class TAC:
         if self.ctrl_stack:
             self.ctrl_stack.pop()
 
-    def _current_break(self):
+    def _current_break(self) -> str:
         if self.ctrl_stack is None or 'break' not in self.ctrl_stack[-1]:
             raise TACError('break used invalid', None)
         return self.ctrl_stack[-1]['break']
 
-    def _current_continue(self):
+    def _current_continue(self) -> str:
         if self.ctrl_stack is None or 'continue' not in self.ctrl_stack[-1]:
             raise TACError('continue used invalid', None)
         return self.ctrl_stack[-1]['continue']
@@ -91,12 +125,15 @@ class TAC:
     # Entry
     # -----
 
-    def generate_tac(self, head: Program, symbol_table):
+    def generate_tac(self,
+                     head: Program,
+                     symbol_table
+                     ) -> list[FunctionBlock]:
         self.symbol_table = symbol_table
         self._program(head)
         return self.functions
 
-    def _program(self, program: Program):
+    def _program(self, program: Program) -> None:
         for unit in program.units:
             if(isinstance(unit, FunctionDefinition)):
                 self._func_def(unit)
@@ -105,9 +142,11 @@ class TAC:
             else:
                 raise TACError('Invalid Program Structure', unit)
 
-    def _func_def(self, func_def: FunctionDefinition):
+    def _func_def(self, func_def: FunctionDefinition) -> None:
         # Setup blocks and function blocks
         func_name = func_def.func_ident
+        if(self.symbol_table is None):
+            raise Exception #TODO Implement Exception
         func = FunctionBlock(func_name, [], self.symbol_table)
         self.functions.append(func)
         entry = BasicBlock()
@@ -144,7 +183,7 @@ class TAC:
             else:
                 raise TACError('Invalid Function Defenition Structure', stmt)
 
-    def _decl_stmt(self, decl: DeclarationStatement):
+    def _decl_stmt(self, decl: DeclarationStatement) -> None:
         for decl_obj in decl.declarations:
             if(isinstance(decl_obj, VarDeclaration)):
                 if(decl_obj.initializer is None):
@@ -153,7 +192,7 @@ class TAC:
             else:
                 raise TACError('Invalid Declaration Statement Structure', decl_obj)
 
-    def _expr_stmt(self, expr_stmt: ExpressionStatement):
+    def _expr_stmt(self, expr_stmt: ExpressionStatement) -> None:
         expr =  expr_stmt.expression
         if expr is None:
             return
@@ -163,7 +202,7 @@ class TAC:
             self._get_expression(expr)
 
 
-    def _assign_expr(self, expr: AssignmentExpression):
+    def _assign_expr(self, expr: AssignmentExpression) -> None:
         operator = expr.operator # has to be a token
         left = expr.left.token # has to be an identifier
         right = self._get_expression(expr.right)
@@ -213,7 +252,7 @@ class TAC:
         else:
             raise TACError("Invlaid Assignment", operator)
 
-    def _bi_expr(self, bi_expr: BinaryExpression):
+    def _bi_expr(self, bi_expr: BinaryExpression) -> Token:
         # Creates a temparary variable for left and right of expression and returns it
         op = bi_expr.operator
         left = self._get_expression(bi_expr.left)
@@ -222,7 +261,7 @@ class TAC:
         self._push_to_block(Instruction('ASSIGN', temp_store, left, right, op))
         return temp_store
 
-    def _post_expr(self, post_expr: PostfixExpression):
+    def _post_expr(self, post_expr: PostfixExpression) -> Token:
         # set temp_var = identifier then preform postfix
         # returns the temp_var
         operand = post_expr.operand
@@ -239,7 +278,7 @@ class TAC:
             raise TACError('Invalid Postfix Structure', operand.type)
         return pre_incement
 
-    def _pre_expr(self, pre_expr: PrefixExpression):
+    def _pre_expr(self, pre_expr: PrefixExpression) -> Token:
         # sets
         operand = pre_expr.operand
         prefix = pre_expr.prefix
@@ -262,7 +301,7 @@ class TAC:
             raise TACError('Invalid Prefix Structure', prefix.type)
         return ident
 
-    def _function_call(self, call: CallExpression):
+    def _function_call(self, call: CallExpression) -> Token:
         for arg in call.arguments:
             param = Token('PARAM', 'param')
             expr = self._get_expression(arg)
@@ -277,11 +316,11 @@ class TAC:
         self._push_to_block(Instruction('CALL', temp_var, tok_name, None, Token('CALL', 'call')))
         return temp_var
 
-    def _switch_stmt(self, stmt: SwitchStatement):
+    def _switch_stmt(self, stmt: SwitchStatement) -> None:
         label_tok = Token('LABEL', 'label')
         case_tok = Token('CASE', 'case')
         label_end = Instruction('LABEL', self._get_label(), None, None, label_tok)
-        self._push_ctrl(label_end.res)
+        self._push_ctrl(label_end.res) # type: ignore
         for cases in stmt.body:
             # Creates a an if statement with control flow for true and false
             case_cond = self._get_expression(cases.labels[0].expression)
@@ -289,12 +328,12 @@ class TAC:
             label_false = Instruction('LABEL', self._get_label(), None, None, label_tok)
             self._push_to_block(Instruction('IF', case_cond, label_true.res, label_false.res, Token('IFSTMT', 'if')))
             self._push_to_block(label_true)
-            self._loop_stmts(case_tok, cases)
+            self._loop_stmts(cases)
             self._push_to_block(label_false)
         self._push_to_block(label_end)
         self._pop_ctrl()
 
-    def _for_stmt(self, stmt: ForStatement):
+    def _for_stmt(self, stmt: ForStatement) -> None:
         label_tok = Token('LABEL', 'label')
         for_tok = Token('FORSTMT', 'for')
         label_start = Instruction('LABEL', self._get_label(), None, None, label_tok)
@@ -305,26 +344,26 @@ class TAC:
         # initializer
         if stmt.initializer is not None:
             self._decl_stmt(stmt.initializer) # type: ignore
-            self._goto_stmt(label_start.res)
+            self._goto_stmt(label_start.res) # type: ignore
         self._push_to_block(label_start)
         condition = self._get_expression(stmt.condition)
         # check condition
         self._push_to_block(Instruction('FOR', condition, label_stmts.res, label_end.res, for_tok))
         # for loop body
         self._push_to_block(label_stmts)
-        self._push_ctrl(label_end.res, label_incr.res)
-        self._loop_stmts(for_tok, stmt.body)
+        self._push_ctrl(label_end.res, label_incr.res) # type: ignore
+        self._loop_stmts(stmt.body)
         self._pop_ctrl()
-        self._goto_stmt(label_incr.res)
+        self._goto_stmt(label_incr.res) # type: ignore
         # increment
         self._push_to_block(label_incr)
         if stmt.increment is not None:
             self._get_expression(stmt.increment)
         # goto start
-        self._goto_stmt(label_start.res)
+        self._goto_stmt(label_start.res) # type: ignore
         self._push_to_block(label_end)
 
-    def _while_stmt(self, stmt: WhileStatement):
+    def _while_stmt(self, stmt: WhileStatement) -> None:
         label_tok =  Token('LABEL', 'label')
         while_tok = Token('WHILESTMT', 'while')
         label_start = Instruction('LABEL', self._get_label(), None, None, label_tok)
@@ -341,22 +380,22 @@ class TAC:
         self._push_to_block(Instruction('WHILE', condition, label_stmts.res, label_end.res, while_tok))
         # while body
         self._push_to_block(label_stmts)
-        self._push_ctrl(label_end.res, label_start.res)
-        self._loop_stmts(while_tok, stmt.body)
+        self._push_ctrl(label_end.res, label_start.res) # type: ignore
+        self._loop_stmts(stmt.body)
         self._pop_ctrl()
         # goto start
-        self._goto_stmt(label_start.res)
+        self._goto_stmt(label_start.res) # type: ignore
         self._push_to_block(label_end)
 
-    def _do_while_stmt(self, stmt: DoWhileStatement):
+    def _do_while_stmt(self, stmt: DoWhileStatement) -> None:
         label_tok = Token('LABEL', 'label')
         while_tok = Token('WHILESTMT', 'while')
         label_start = Instruction('LABEL', self._get_label(), None, None, label_tok)
         label_end = Instruction('LABEL', self._get_label(), None, None, label_tok)
         # while body
         self._push_to_block(label_start)
-        self._push_ctrl(label_end.res)
-        self._loop_stmts(while_tok, stmt.body)
+        self._push_ctrl(label_end.res) # type: ignore
+        self._loop_stmts(stmt.body)
         self._pop_ctrl()
         # check condition
         condition = self._get_expression(stmt.condition)
@@ -365,10 +404,10 @@ class TAC:
         # 2. if true goto
         # 3. if false goto
         # 4. while tok
-        self._push_to_block(Instruction('WHILE', condition, label_start.res, label_end.res, Token('WHILESTMT', 'while')))
+        self._push_to_block(Instruction('WHILE', condition, label_start.res, label_end.res, while_tok))
         self._push_to_block(label_end)
 
-    def _if_stmt(self, stmt: IfStatement):
+    def _if_stmt(self, stmt: IfStatement) -> None:
         if_tok = Token('IFSTMT', 'if')
         label_tok = Token('LABEL', 'label')
         # check condition
@@ -384,16 +423,16 @@ class TAC:
         self._push_to_block(Instruction('IF',condition, label_true.res, label_false.res, if_tok))
         # if true
         self._push_to_block(label_true)
-        self._loop_stmts(if_tok, stmt.then_branch)
-        self._goto_stmt(label_end.res)
+        self._loop_stmts(stmt.then_branch)
+        self._goto_stmt(label_end.res) # type: ignore
         # if false
         self._push_to_block(label_false)
         if(stmt.else_branch is not None):
-            self._loop_stmts(if_tok, stmt.else_branch)
-        self._goto_stmt(label_end.res)
+            self._loop_stmts(stmt.else_branch)
+        self._goto_stmt(label_end.res) # type: ignore
         self._push_to_block(label_end)
 
-    def _loop_stmts(self, tok, stmts):
+    def _loop_stmts(self, stmts: Any) -> None:
         stmt_list = stmts.items
         for stmt in stmt_list:
             if(isinstance(stmt, DeclarationStatement)):
@@ -423,7 +462,7 @@ class TAC:
             else:
                 raise TACError('Invalid Function Defenition Structure', stmt)
 
-    def _get_expression(self, expr):
+    def _get_expression(self, expr: Any) -> Token:
         result = None
         if(isinstance(expr, Literal)):
             result = self._literal(expr)
@@ -445,35 +484,35 @@ class TAC:
             raise TACError('Invalid Statement Structure', expr)
         return result
 
-    def _var_decl(self, decl_obj: VarDeclaration):
+    def _var_decl(self, decl_obj: VarDeclaration) -> None:
         expr_obj = decl_obj.initializer
         var_ident = decl_obj.declarator
         value = self._get_expression(expr_obj)
         self._push_to_block(Instruction('DECL', var_ident, value))
 
-    def _return_stmt(self, stmt: ReturnStatement):
+    def _return_stmt(self, stmt: ReturnStatement) -> None:
         value = self._get_expression(stmt.expression)
         self._push_to_block(Instruction('RETURN' ,value, None, None, Token('RETURN', 'return')))
         self._push_to_block(Instruction('LABEL', self._get_label(), None, None, Token('LABEL', 'label')))
 
-    def _label_stmt(self, name = None):
+    def _label_stmt(self, name = None) -> None:
         if name is None:
             name = self._get_label()
         self._push_to_block(Instruction('LABEL', name, None, None, Token('LABEL', 'label')))
 
-    def _goto_stmt(self, name: Instruction):
+    def _goto_stmt(self, name: str) -> None:
         self._push_to_block(Instruction('GOTO', name, None, None, Token('GOTO', 'goto')))
 
-    def _break_stmt(self):
+    def _break_stmt(self) -> None:
         target = self._current_break()
         self._goto_stmt(target)
 
-    def _continue_stmt(self):
+    def _continue_stmt(self) -> None:
         target = self._current_continue()
         self._goto_stmt(target)
 
-    def _literal(self, lit: Literal):
+    def _literal(self, lit: Literal) -> Token:
         return lit.token
 
-    def _identifier(self, ident: Identifier):
+    def _identifier(self, ident: Identifier) -> Token:
         return ident.token

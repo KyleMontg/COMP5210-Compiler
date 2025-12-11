@@ -1,16 +1,12 @@
 int main() {
-    int x = 10;
-    int y = 2;
-    int z = 2 + 3;
-    int a = z + z + x;
-    if(x < y){
-        int y = 2;
+    int z = 10;
+    int x = 0;
+    int y = 1;
+    int n = 0;
+    while(x<n){
+        z = x * 2 + y;
+        x++;
+        y = x + z;
     }
-    for(int i = 0; i < x; i++){
-        x += y;
-    }
-    if(y == x){
-        return y;
-    }
-    return x;
+    return y;
 }
