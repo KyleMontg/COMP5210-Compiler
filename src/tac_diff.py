@@ -254,4 +254,3 @@ __all__ = [
     'tac_equals',
     'compare_tac_structures',
 ]
-

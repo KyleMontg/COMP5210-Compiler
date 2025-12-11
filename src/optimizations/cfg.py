@@ -1,16 +1,17 @@
-from src.tac import *
+from src.tac import TAC, FunctionBlock, BasicBlock
 
 # https://www.geeksforgeeks.org/software-engineering/software-engineering-control-flow-graph-cfg/
+
+
 class CFGNode:
     def __init__(self, block: BasicBlock):
         self.block = block
         self.succ = []
         self.pred = []
         self.label = block.instr_list[0] if block.instr_list else None
-        if(self.label and self.label.instr_type != 'LABEL'):
+        if (self.label and self.label.instr_type != 'LABEL'):
             self.label = None
         self.last_instr = block.instr_list[-1] if block.instr_list else None
-
 
     def add_succ(self, other: 'CFGNode'):
         if other not in self.succ:

@@ -1,5 +1,7 @@
 from dataclasses import is_dataclass, asdict, fields
 # AI Generated Formatting Code
+
+
 def ast_to_json(ast):
     if ast is None:
         return None
@@ -7,6 +9,8 @@ def ast_to_json(ast):
         return {key: ast_to_json(value) for key, value in asdict(ast).items()}
     return ast
 # AI Generated AST Print Function
+
+
 def pretty_ast(ast) -> str:
     """Return a tree-style string of the AST using ASCII connectors."""
     def format_atom(v):
@@ -49,9 +53,11 @@ def pretty_ast(ast) -> str:
                         lines.append(f"{child_indent}{branch} {f.name}")
                         for j, item in enumerate(val):
                             item_last = j == len(val) - 1
-                            lines.extend(render(item, sub_indent, item_last).splitlines())
+                            lines.extend(
+                                render(item, sub_indent, item_last).splitlines())
                 else:
-                    lines.append(f"{child_indent}{branch} {f.name}: {format_atom(val)}")
+                    lines.append(
+                        f"{child_indent}{branch} {f.name}: {format_atom(val)}")
             return "\n".join(lines)
         elif isinstance(node, list):
             label = f"list[{len(node)}]"
@@ -61,7 +67,8 @@ def pretty_ast(ast) -> str:
                 lines.append(f"{indent}{connector} {label}")
             child_indent = indent + ("    " if is_last else "│   ")
             for j, item in enumerate(node):
-                lines.extend(render(item, child_indent, j == len(node) - 1).splitlines())
+                lines.extend(render(item, child_indent, j ==
+                             len(node) - 1).splitlines())
             return "\n".join(lines)
         else:
             text = format_atom(node)
@@ -72,6 +79,7 @@ def pretty_ast(ast) -> str:
             return "\n".join(lines)
 
     return render(ast)
+
 
 def pretty_tac(instructions) -> str:
     """Format TAC into readable text.
@@ -104,7 +112,7 @@ def pretty_tac(instructions) -> str:
         except Exception:
             Token = None
             astn = None
-            is_dataclass = lambda v: False
+            def is_dataclass(v): return False
         if x is None:
             return ''
         # Unwrap AST wrapper nodes like Identifier/Literal to their token
@@ -160,12 +168,14 @@ def pretty_tac(instructions) -> str:
 
         # GOTO encoding: op=GOTO, target label in res (fallback to left)
         if op_type == 'GOTO':
-            label_name = operand_str(getattr(ins, 'res', None)) or operand_str(getattr(ins, 'left', None))
+            label_name = operand_str(getattr(ins, 'res', None)) or operand_str(
+                getattr(ins, 'left', None))
             return f"{index:04}: goto {label_name}"
 
         # LABEL encoding: op=LABEL, label name may be in res or left
         if op_type == 'LABEL':
-            label_name = operand_str(getattr(ins, 'res', None)) or operand_str(getattr(ins, 'left', None))
+            label_name = operand_str(getattr(ins, 'res', None)) or operand_str(
+                getattr(ins, 'left', None))
             return f"{index:04}: label {label_name}:"
 
         # CALL encoding: op=CALL, res=temp, left=function name
@@ -180,8 +190,10 @@ def pretty_tac(instructions) -> str:
         # res = condition place, left = true target, right = false target
         if op_type in {'IFSTMT', 'WHILESTMT', 'FORSTMT'}:
             cond = operand_str(getattr(ins, 'res', None))
-            tlabel = operand_str(getattr(ins, 'left', None)) if getattr(ins, 'left', None) is not None else None
-            flabel = operand_str(getattr(ins, 'right', None)) if getattr(ins, 'right', None) is not None else None
+            tlabel = operand_str(getattr(ins, 'left', None)) if getattr(
+                ins, 'left', None) is not None else None
+            flabel = operand_str(getattr(ins, 'right', None)) if getattr(
+                ins, 'right', None) is not None else None
             # Unified rendering as IF-style conditional with true/else labels
             if tlabel and flabel:
                 return f"{index:04}: if {cond} goto {tlabel} else {flabel}"

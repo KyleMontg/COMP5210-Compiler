@@ -6,9 +6,10 @@ from .errors import *
 from .tac import *
 from .tac_diff import *
 from .print_structures import *
+from .asm import *
 from .optimizations.constant_fold import *
-from .optimizations.copy_propagation import *
+from .optimizations.copy_and_constant_propagation import *
 from .optimizations.dead_code_elimination import *
 from .optimizations.cfg import *
-from .optimizations.asm import *
 from .optimizations.register_optimization import *
+from src.semantic_analyzer import *

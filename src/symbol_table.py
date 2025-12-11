@@ -1,7 +1,19 @@
 from dataclasses import dataclass, field
-from typing import *
-from src.ast_nodes import *
+from typing import Any, Optional
+from src.ast_nodes import (
+    Program,
+    FunctionDefinition,
+    FunctionDeclaration,
+    DeclarationStatement,
+    CompoundStatement,
+    IfStatement,
+    WhileStatement,
+    DoWhileStatement,
+    ForStatement,
+    SwitchStatement
+)
 from src.errors import SymbolTableError
+
 
 @dataclass
 class Symbol:
@@ -14,7 +26,7 @@ class Symbol:
 class Scope:
     id: int
     name: str
-    parent: Optional['Scope']= field(default=None, repr=False)
+    parent: Optional['Scope'] = field(default=None, repr=False)
     children: list['Scope'] = field(default_factory=list, repr=False)
     symbols: dict[str, Symbol] = field(default_factory=dict)
     labels: dict[str, Any] = field(default_factory=dict)    # goto labels
@@ -29,6 +41,7 @@ class Scope:
         s += f'Name:     {self.name}\n'
         s += f'Symbols:  {self.symbols}\n'
         return s
+
 
 class SymbolTable:
     def __init__(self):
@@ -97,18 +110,20 @@ class SymbolTable:
                 prev_type = existing.data.get('type')
                 new_type = func.func_type.base.value
                 if prev_type != new_type:
-                    raise SymbolTableError(f"Function re-declared with different type: {name}", func.func_ident)
+                    raise SymbolTableError(
+                        f"Function re-declared with different type: {name}", func.func_ident)
                 existing.data['line'] = func.func_ident.line_num
                 existing.data['char'] = func.func_ident.char_num
                 return
             # Name exists but not as a function – real conflict
-            raise SymbolTableError(f"Cant re-declare variable: {name}", func.func_ident)
+            raise SymbolTableError(
+                f"Cant re-declare variable: {name}", func.func_ident)
 
         self._add_symbol(name,
-                        {'kind': 'func',
-                         'type': func.func_type.base.value,
-                         'line': func.func_ident.line_num,
-                         'char': func.func_ident.char_num})
+                         {'kind': 'func',
+                          'type': func.func_type.base.value,
+                          'line': func.func_ident.line_num,
+                          'char': func.func_ident.char_num})
 
     def _add_param(self, func_param):
         for param in func_param:
