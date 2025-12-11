@@ -3,14 +3,14 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 
 
 ># Table of Contents
->[Requirements](#requirements)
->[Usage](#Usage)
->[Language Specification](#language-specifications)
->[Optimization](#optimizations)
->[Lexical Tokens](#Tokens)
->[Grammer Rules](#Grammer)
->[Compiler Stages](#Compiler-Stages)
->[Sources](#sources)
+>[Requirements](#requirements)  
+>[Usage](#Usage)  
+>[Language Specification](#language-specifications)  
+>[Optimization](#optimizations)  
+>[Lexical Tokens](#Tokens)  
+>[Grammer Rules](#Grammer)  
+>[Compiler Stages](#Compiler-Stages)  
+>[Sources](#sources)  
 
 
 ## Requirements
@@ -19,16 +19,16 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 ***
 
 ## Usage
-##### Run code
->`python main.py input.c -o1 -asm`
-**flags**
-> `-l` Contents of lexer will be printed to console
-> `-a` Contents of Parser will be printed to console
-> `-t` Contents of Symbol Table will be printed to console
-> `-w "file_location/file_name"` When flagged, output file name and directory can be specified, defaults to output.txt in main directory
-> `-o0` Create the Three Address Code with no optimizations and print to terminal
-> `-o1` Create the Three Address Code with all optimizations and print to terminal
-> `-asm` Generates X86 Assembly for 64-bit Windows
+##### Run code  
+>`python main.py input.c -o1 -asm`  
+**flags**  
+> `-l` Contents of lexer will be printed to console  
+> `-a` Contents of Parser will be printed to console  
+> `-t` Contents of Symbol Table will be printed to console  
+> `-w "file_location/file_name"` When flagged, output file name and directory can be specified, defaults to output.txt in main directory  
+> `-o0` Create the Three Address Code with no optimizations and print to terminal  
+> `-o1` Create the Three Address Code with all optimizations and print to terminal  
+> `-asm` Generates X86 Assembly for 64-bit Windows  
 ##### Run Tests
 >`python test_runner.py --all`
 **flags**
