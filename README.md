@@ -45,110 +45,45 @@ A compiler for a subsection of the C99 programming language by Kyle Montgomery.
 
 
 ### Lexical Specification
-#### Types
-* int: (signed 64-bit integers only)
-#### Operators
-* Arithmetic: `+, -, *, /, %, ++, --`
-* Comparison: `<, >, <=, >=, ==, !=`
-* Bitwise: `&, |, ^, ~, <<, >>`
-* Logical: `&&, ||, !`
-* Assignment: `=, !=, -=, *=, /=, %=`
-#### Control Flow
-* if / else
-* while loops
-* do-while loops
-* for loops
-* return
-* break / continue
-* goto / labels
-#### Functions
-* Supports one function with parameters
-#### Expressions
-* Binary Expressions
-* Unary Expressions
-* Assignment Expressions
-* Supports use of Parentheses
-#### Comments
-* Single Line: `//`
-* Multi-line: `/* */`
-#### Unsupported
-* Strings
-* Chars
-* Floating point numbers
-* Pointers
-* Funciton Calls
-* Type Qualifiers
+> * White space is skipped over
+> * Comments are recognised as `//`, `/* */` and are skipped over
+> * Valid numbers are one of the following:
+> * decimal integers, decimal floats, hex
+> * Identifiers follow `[A-Za-z_][A-Za-z0-9_]*`
+> * Invalid tokens are caught via a LexerError
+> * No support for arrays, pointers, structs, unions, enums, or typedef
+> * Does not support ternary statement
+> * Current Symbol Table does not support label or predefined variables being redefined
+
+>##### Unsupported C punctuators
+>|||||
+>|-----|----|----|------|
+>| ... | ## | <: | :>   |
+>| <%  | %> | %: | %:%: |
+>| #   | [  | ]  | ->   |
+>| ?   |    |    |      |
+
+### Parsing Strategy
+> * Used a recursive decent parser and pratt parser
+> * Pratt parsing for expressions uses a token precedence dictionary located in `tokens.py`
+> * Chose pratt parsing because the ability to update and support more oerators in the future with ease
+
+>##### Valid Prefix Operators
+>|||||
+>|----|----|----|----|
+>| +  | -  | !  | ~  |
+>| ++ | -- |    |    |
 
 
-
-### Implimentation Specifications
-
-
-##### Three Address Code Instruction Structure
-* I reuse the same Instruction Object having fields:
-* res (result)
-* left (left side of operation)
-* right (right side of operation)
-* op (operator)
-* Below are the different ways an instructions is constructed
-
->**DECL**    res=<identifier token>, left=<initializer token/temp>, right=None, op=None`
-
->**ASSIGN**  res=<target>, left=<operand>, right=<operand or None>, op=<operator token>`
-
->**PARAM**   res=Token('PARAM','param'), left=<argument value>, right=None, op=None`
-
->**CALL**    res=<temp for return>, left=<callee name>, right=None, op=Token('CALL','call')`
-
->**LABEL**   res=<label name string>, left=None, right=None, op=Token('LABEL','label')`
-
->**GOTO**    res=<target label>, left=None, right=None, op=Token('GOTO','goto')`
-
->**IF**      res=<condition temp>, left=<true label>, right=<false label>, op=Token('IFSTMT','if')
-
->**FOR**     res=<condition temp>, left=<body label>, right=<exit label>, op=Token('FORSTMT','for')`
-
->**WHILE**   res=<condition temp>, left=<body label>, right=<exit label>, op=Token('WHILESTMT','while')`
-
->**RETURN**  res=<value temp/literal>, left=None, right=None, op=Token('RETURN','return')`
-
-***
-
-#### Assembly Specification
-* Windows X86
-* Below is how I reserve registers:
-*The first 4 parameters are held at:
-> 1) rcx
-> 2) rdx
-> 3) r8
-> 4) r9
-> 5) or more live on the stack
-
-> rbp - used for frame pointer
-> rax - return register / used in division
-> rcx - used as a temp register when needed
-> r10 - r15 - used as general use registers
+>##### Valid Postfix Operators
+>|||||
+>|----|----|----|----|
+>| (  | .  | ++ | -- |
 
 
-***
-### Optimizations
-#### Copy and Constant Propigation
-* Creates a control flow graph and iterates through each block
-* Propigates constant variables and literals
-#### Constant Folding
-* Collapses Binary Operations
-#### Dead Code Elimination
-* Creates a control flow graph and iterates through each block
-* Marks variables defined and used
-* Iterates through blocks until no change in used and unkown variables
-* Removes unused variables
-* Redirects labels followed directly by gotos to the goto destination
-#### Register Optimization
-* Creates a control flow graph
-* Gets the live in and out sets for each control block
-* Uses the out of each control block to propigate out to individual instructions
-* Creates a tnterference graph to represent edges
-* Uses greedy coloring algorithm to assign registers to variables
+# To-Do
+> * Add support for predefined veriables and functions
+> * Add label support
 
 
 # Tokens
